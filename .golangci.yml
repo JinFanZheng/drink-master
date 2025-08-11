@@ -20,7 +20,6 @@ linters-settings:
     local-prefixes: github.com/ddteam/drink-master
 
 linters:
-  disable-all: true
   enable:
     - errcheck
     - gofmt
@@ -33,6 +32,8 @@ linters:
     - gocyclo
     - lll
     - misspell
+  disable:
+    - typecheck
 
 issues:
   exclude-rules:
