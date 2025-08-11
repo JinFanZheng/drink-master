@@ -11,6 +11,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// JWTClaims extends jwt.RegisteredClaims with custom fields
+type JWTClaims struct {
+	MemberID       string `json:"member_id"`
+	MachineOwnerID string `json:"machine_owner_id,omitempty"`
+	Role           string `json:"role"`
+	jwt.RegisteredClaims
+}
+
 // JWTAuth JWT认证中间件
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -55,8 +63,8 @@ func JWTAuth() gin.HandlerFunc {
 		if err != nil {
 			var errorCode string
 			var message string
-			
-			if err.Error() == "token is expired" {
+
+			if strings.Contains(err.Error(), "expired") {
 				errorCode = contracts.ErrorCodeTokenExpired
 				message = "Token已过期"
 			} else {
@@ -81,22 +89,22 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		// 将用户信息添加到上下文
-		c.Set("user_id", claims.UserID)
-		c.Set("username", claims.Username)
-		c.Set("email", claims.Email)
+		c.Set("member_id", claims.MemberID)
+		c.Set("machine_owner_id", claims.MachineOwnerID)
+		c.Set("role", claims.Role)
 
 		c.Next()
 	}
 }
 
 // validateJWT 验证JWT token
-func validateJWT(tokenString string) (*contracts.TokenClaims, error) {
+func validateJWT(tokenString string) (*JWTClaims, error) {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		jwtSecret = "default_jwt_secret_change_this_in_production"
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(jwtSecret), nil
 	})
 
@@ -108,33 +116,12 @@ func validateJWT(tokenString string) (*contracts.TokenClaims, error) {
 		return nil, jwt.ErrTokenNotValidYet
 	}
 
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	claims, ok := token.Claims.(*JWTClaims)
 	if !ok {
 		return nil, jwt.ErrInvalidKey
 	}
 
-	// 检查token是否过期
-	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
-		return nil, jwt.NewValidationError("token is expired", jwt.ValidationErrorExpired)
-	}
-
-	// 从Subject中解析用户信息
-	// 这里简化处理，实际项目中可能需要从数据库查询完整用户信息
-	userClaims := &contracts.TokenClaims{
-		UserID: parseUserID(claims.Subject),
-		// Username 和 Email 可以从自定义claims中获取
-		// 这里为了简化，使用Subject作为Username
-		Username: claims.Subject,
-	}
-
-	return userClaims, nil
-}
-
-// parseUserID 从Subject中解析用户ID
-func parseUserID(subject string) uint {
-	// 这里简化处理，实际应该有更严格的解析逻辑
-	// 可以考虑在JWT中直接存储用户ID
-	return 1 // 简化返回，实际项目中需要正确实现
+	return claims, nil
 }
 
 // getRequestID 获取请求ID
@@ -145,20 +132,35 @@ func getRequestID(c *gin.Context) string {
 	return ""
 }
 
-// GetCurrentUserID 获取当前用户ID的辅助函数
-func GetCurrentUserID(c *gin.Context) (uint, bool) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		return 0, false
-	}
-	return userID.(uint), true
-}
-
-// GetCurrentUsername 获取当前用户名的辅助函数
-func GetCurrentUsername(c *gin.Context) (string, bool) {
-	username, exists := c.Get("username")
+// GetCurrentMemberID 获取当前用户ID的辅助函数
+func GetCurrentMemberID(c *gin.Context) (string, bool) {
+	memberID, exists := c.Get("member_id")
 	if !exists {
 		return "", false
 	}
-	return username.(string), true
+	return memberID.(string), true
+}
+
+// GetCurrentMachineOwnerID 获取当前机主ID的辅助函数
+func GetCurrentMachineOwnerID(c *gin.Context) (string, bool) {
+	machineOwnerID, exists := c.Get("machine_owner_id")
+	if !exists {
+		return "", false
+	}
+	return machineOwnerID.(string), true
+}
+
+// GetCurrentRole 获取当前用户角色的辅助函数
+func GetCurrentRole(c *gin.Context) (string, bool) {
+	role, exists := c.Get("role")
+	if !exists {
+		return "", false
+	}
+	return role.(string), true
+}
+
+// IsMachineOwner 检查当前用户是否为机主
+func IsMachineOwner(c *gin.Context) bool {
+	role, exists := GetCurrentRole(c)
+	return exists && role == "Owner"
 }
