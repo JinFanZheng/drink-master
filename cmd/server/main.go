@@ -4,11 +4,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+
 	"github.com/ddteam/drink-master/internal/config"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/routes"
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {

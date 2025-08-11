@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/ddteam/drink-master/internal/contracts"
 )
 
 // JWTClaims extends jwt.RegisteredClaims with custom fields

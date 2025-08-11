@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/contracts"
-	"github.com/ddteam/drink-master/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/middleware"
 )
 
 // BaseHandler 基础控制器结构 (对应MobileAPI BaseController)

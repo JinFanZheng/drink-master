@@ -1,10 +1,11 @@
 package routes
 
 import (
-	"github.com/ddteam/drink-master/internal/handlers"
-	"github.com/ddteam/drink-master/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/handlers"
+	"github.com/ddteam/drink-master/internal/middleware"
 )
 
 // SetupRoutes 设置所有路由 (基于MobileAPI Controllers)

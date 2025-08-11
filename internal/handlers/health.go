@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/contracts"
 )
 
 // HealthHandler 健康检查处理器
