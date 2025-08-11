@@ -13,6 +13,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&Product{},
 		&MachineProductPrice{},
 		&Order{},
+		&FranchiseIntention{},
 	)
 }
 
@@ -25,5 +26,6 @@ func AllModels() []interface{} {
 		&Product{},
 		&MachineProductPrice{},
 		&Order{},
+		&FranchiseIntention{},
 	}
 }

@@ -41,6 +41,7 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	{
 		member.POST("/Update", memberHandler.Update)
 		member.POST("/AddFranchiseIntention", memberHandler.AddFranchiseIntention)
+		member.GET("/GetUserInfo", memberHandler.GetUserInfo)
 	}
 
 	// 基于MachineController的路由
@@ -76,6 +77,23 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	{
 		payment.GET("/Get", paymentHandler.Get)
 		payment.GET("/Query", paymentHandler.Query)
+	}
+
+	// 基于ProductController的路由
+	productHandler := handlers.NewProductHandler(db)
+	product := router.Group("/api/products")
+	{
+		// 公开接口
+		product.GET("/select", productHandler.GetSelectList)
+	}
+
+	// 基于MachineOwnerController的路由 (机主管理功能)
+	machineOwnerHandler := handlers.NewMachineOwnerHandler(db)
+	machineOwner := router.Group("/api/machine-owners")
+	machineOwner.Use(middleware.JWTAuth()) // 所有机主接口都需要认证
+	{
+		machineOwner.GET("/sales", machineOwnerHandler.GetSales)
+		machineOwner.GET("/sales/stats", machineOwnerHandler.GetSalesStats)
 	}
 
 	// 回调接口 (无需认证)
