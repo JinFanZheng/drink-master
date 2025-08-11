@@ -1,0 +1,28 @@
+# Global owners - these users will be requested for review for all PRs
+* @ddteam/maintainers
+
+# Core API contracts - require architecture review
+/internal/contracts/ @ddteam/api-architects
+
+# Database models and migrations - require data review
+/internal/models/ @ddteam/backend-leads
+/migrations/ @ddteam/backend-leads
+
+# Security-related files - require security review
+/internal/middleware/auth.go @ddteam/security-team
+/cmd/server/main.go @ddteam/backend-leads
+
+# Infrastructure and deployment
+/Dockerfile @ddteam/devops
+/docker-compose.yml @ddteam/devops
+/.github/workflows/ @ddteam/devops
+
+# Documentation - technical writers and maintainers
+/docs/ @ddteam/tech-writers @ddteam/maintainers
+/README.md @ddteam/tech-writers @ddteam/maintainers
+/CLAUDE.md @ddteam/maintainers
+
+# Configuration files
+/Makefile @ddteam/backend-leads
+/go.mod @ddteam/backend-leads
+/go.sum @ddteam/backend-leads

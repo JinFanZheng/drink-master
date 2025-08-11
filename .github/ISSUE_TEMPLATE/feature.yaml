@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: 'feat: <short summary>'
+labels: ['backend','api','priority-medium']
+body:
+  - type: input
+    id: goal
+    attributes:
+      label: Goal
+      description: What problem does this solve?
+      placeholder: e.g., 用户饮品消费统计分析功能
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is in/out of scope?
+      placeholder: |
+        In scope:
+        - 消费统计API
+        - 热门饮品排行
+        - 个人消费趋势
+        
+        Out of scope:
+        - 第三方数据导入
+        - 实时推送通知
+  - type: input
+    id: contracts
+    attributes:
+      label: Contracts impact
+      description: Will internal/contracts/*.go change? If yes, list changes.
+      placeholder: e.g., 新增 StatsRequest/StatsResponse 结构体
+  - type: textarea
+    id: api_endpoints
+    attributes:
+      label: API Endpoints
+      description: List new or modified API endpoints
+      placeholder: |
+        - GET /api/stats/consumption
+        - GET /api/stats/popular
+        - GET /api/stats/trends
+  - type: textarea
+    id: database_changes
+    attributes:
+      label: Database Changes
+      description: Any new tables or schema modifications?
+      placeholder: e.g., 新增索引到consumption_logs表的consumed_at字段
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List any blocking issues
+      placeholder: 'Depends on: #XX, #XX'

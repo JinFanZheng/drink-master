@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: drink_master_test
+          MYSQL_USER: drink_master
+          MYSQL_PASSWORD: testpassword
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Install development tools
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          
+      - name: Wait for MySQL
+        run: |
+          until nc -z localhost 3306; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "✅ MySQL is ready"
+
+      - name: Run linting
+        run: |
+          echo "🔍 Running Go linting..."
+          golangci-lint run --timeout=5m
+          go fmt ./...
+          go vet ./...
+          echo "✅ Linting completed"
+
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USER: drink_master
+          DB_PASSWORD: testpassword
+          DB_NAME: drink_master_test
+          JWT_SECRET: test_jwt_secret_for_ci
+          GIN_MODE: test
+        run: |
+          echo "🧪 Running tests with coverage..."
+          go test -v -race -coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage.html
+          echo "✅ Tests completed"
+
+      - name: Check test coverage
+        run: |
+          echo "📊 Checking test coverage..."
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Test coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Test coverage is below 80%"
+            exit 1
+          fi
+          echo "✅ Test coverage meets requirements (>80%)"
+
+      - name: Build application
+        run: |
+          echo "🔨 Building application..."
+          go build -v -o bin/drink-master cmd/server/main.go
+          echo "✅ Build completed successfully"
+          
+      - name: Test build artifacts
+        run: |
+          echo "Checking build artifacts..."
+          ls -la bin/
+          test -f bin/drink-master && echo "✅ Binary exists"
+          file bin/drink-master
+          echo "✅ Build artifacts validated"
+
+      - name: Validate application startup (dry run)
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USER: drink_master
+          DB_PASSWORD: testpassword
+          DB_NAME: drink_master_test
+          JWT_SECRET: test_jwt_secret_for_ci
+          GIN_MODE: test
+        run: |
+          echo "🚀 Testing application startup..."
+          timeout 10s ./bin/drink-master &
+          PID=$!
+          sleep 5
+          if ps -p $PID > /dev/null; then
+            echo "✅ Application started successfully"
+            kill $PID
+          else
+            echo "❌ Application failed to start"
+            exit 1
+          fi
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary
+          path: bin/drink-master

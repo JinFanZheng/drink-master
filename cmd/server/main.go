@@ -6,9 +6,6 @@ import (
 
 	"github.com/ddteam/drink-master/internal/handlers"
 	"github.com/ddteam/drink-master/internal/middleware"
-	"github.com/ddteam/drink-master/internal/models"
-	"github.com/ddteam/drink-master/internal/repositories"
-	"github.com/ddteam/drink-master/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -29,30 +26,16 @@ func main() {
 	// 初始化数据库
 	db := initDatabase()
 	
-	// 自动迁移
-	if err := db.AutoMigrate(&models.User{}, &models.Drink{}, &models.DrinkCategory{}, &models.ConsumptionLog{}); err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
-
-	// 初始化repositories
-	userRepo := repositories.NewUserRepository(db)
-	drinkRepo := repositories.NewDrinkRepository(db)
-	categoryRepo := repositories.NewDrinkCategoryRepository(db)
-	consumptionRepo := repositories.NewConsumptionLogRepository(db)
-
-	// 初始化services
-	userService := services.NewUserService(userRepo)
-	drinkService := services.NewDrinkService(drinkRepo, categoryRepo)
-	statsService := services.NewStatsService(consumptionRepo, drinkRepo)
+	// TODO: 添加自动迁移
+	// if err := db.AutoMigrate(&models.YourModel{}); err != nil {
+	//     log.Fatal("Failed to migrate database:", err)
+	// }
 
 	// 初始化handlers
 	healthHandler := handlers.NewHealthHandler(db)
-	authHandler := handlers.NewAuthHandler(userService)
-	drinkHandler := handlers.NewDrinkHandler(drinkService)
-	statsHandler := handlers.NewStatsHandler(statsService)
 
 	// 初始化路由
-	router := setupRouter(healthHandler, authHandler, drinkHandler, statsHandler)
+	router := setupRouter(healthHandler)
 
 	// 获取端口配置
 	port := os.Getenv("PORT")
@@ -70,7 +53,7 @@ func initDatabase() *gorm.DB {
 	port := getEnvOrDefault("DB_PORT", "3306")
 	user := getEnvOrDefault("DB_USER", "root")
 	password := getEnvOrDefault("DB_PASSWORD", "")
-	dbname := getEnvOrDefault("DB_NAME", "drink_master_dev")
+	dbname := getEnvOrDefault("DB_NAME", "app_dev")
 
 	dsn := user + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbname + "?charset=utf8mb4&parseTime=True&loc=Local"
 	
@@ -82,12 +65,7 @@ func initDatabase() *gorm.DB {
 	return db
 }
 
-func setupRouter(
-	healthHandler *handlers.HealthHandler,
-	authHandler *handlers.AuthHandler,
-	drinkHandler *handlers.DrinkHandler,
-	statsHandler *handlers.StatsHandler,
-) *gin.Engine {
+func setupRouter(healthHandler *handlers.HealthHandler) *gin.Engine {
 	router := gin.Default()
 
 	// 中间件
@@ -101,42 +79,18 @@ func setupRouter(
 		api.GET("/health", healthHandler.Health)
 		api.GET("/health/db", healthHandler.DatabaseHealth)
 
-		// 认证相关
-		auth := api.Group("/auth")
-		{
-			auth.POST("/register", authHandler.Register)
-			auth.POST("/login", authHandler.Login)
-		}
+		// TODO: 添加其他路由
+		// auth := api.Group("/auth")
+		// {
+		//     auth.POST("/login", authHandler.Login)
+		// }
 
-		// 需要认证的路由
-		protected := api.Group("/")
-		protected.Use(middleware.JWTAuth())
-		{
-			// 饮品管理
-			drinks := protected.Group("/drinks")
-			{
-				drinks.GET("", drinkHandler.GetDrinks)
-				drinks.POST("", drinkHandler.CreateDrink)
-				drinks.GET("/:id", drinkHandler.GetDrink)
-				drinks.PUT("/:id", drinkHandler.UpdateDrink)
-				drinks.DELETE("/:id", drinkHandler.DeleteDrink)
-			}
-
-			// 统计分析
-			stats := protected.Group("/stats")
-			{
-				stats.GET("/consumption", statsHandler.GetConsumptionStats)
-				stats.GET("/popular", statsHandler.GetPopularDrinks)
-				stats.GET("/trends", statsHandler.GetConsumptionTrends)
-			}
-
-			// 消费记录
-			logs := protected.Group("/logs")
-			{
-				logs.POST("", drinkHandler.LogConsumption)
-				logs.GET("", drinkHandler.GetConsumptionLogs)
-			}
-		}
+		// TODO: 添加需要认证的路由
+		// protected := api.Group("/")
+		// protected.Use(middleware.JWTAuth())
+		// {
+		//     // 添加保护路由
+		// }
 	}
 
 	return router

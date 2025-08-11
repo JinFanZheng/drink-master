@@ -1,0 +1,98 @@
+name: Issue automation (claim/status -> project sync)
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, closed]
+  issue_comment:
+    types: [created]
+
+jobs:
+  sync-to-project:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = context.payload.issue.number;
+            const labelNames = (context.payload.issue.labels || []).map(l => l.name);
+            const statusFromEvent = () => {
+              if (context.payload.action === 'opened') return 'Todo';
+              if (context.payload.action === 'labeled') {
+                if (context.payload.label.name === 'in-progress') return 'In progress';
+                if (context.payload.label.name === 'blocked') return 'Blocked';
+                if (context.payload.label.name === 'review') return 'Review';
+              }
+              if (context.payload.action === 'unlabeled') {
+                if (context.payload.label.name === 'review') return 'In progress';
+              }
+              if (context.payload.action === 'closed') return 'Done';
+              return null;
+            };
+            const desiredStatus = statusFromEvent();
+
+            // Fetch project and Status field
+            const projectNumber = 1; // 项目看板编号，需要根据实际情况调整
+            const projectOwner = 'ddteam'; // 组织或用户名，需要根据实际情况调整
+            const proj = await github.graphql(`
+              query($login:String!, $number:Int!) {
+                user(login:$login){
+                  projectV2(number:$number){ id, fields(first:50){ nodes { __typename id ... on ProjectV2SingleSelectField { name options{ id name } } } }
+                }
+              }`, { login: projectOwner, number: projectNumber });
+            const project = proj.user.projectV2;
+            if (!project) return core.setFailed('Project not found');
+            const statusField = project.fields.nodes.find(n => n.__typename==='ProjectV2SingleSelectField' && n.name==='Status');
+
+            // Get issue node id
+            const issueData = await github.graphql(`
+              query($owner:String!, $repo:String!, $number:Int!) {
+                repository(owner:$owner, name:$repo){ issue(number:$number){ id projectItems(first:50){ nodes { id project{ id } } } }
+                }
+              }`, { owner, repo, number: issueNumber });
+            const issue = issueData.repository.issue;
+            const issueId = issue.id;
+
+            // Ensure item exists in project
+            const inProject = issue.projectItems.nodes.find(n => n.project.id === project.id);
+            let itemId = inProject?.id;
+            if (!itemId) {
+              const addRes = await github.graphql(`
+                mutation($projectId:ID!, $contentId:ID!){ addProjectV2ItemById(input:{projectId:$projectId, contentId:$contentId}){ item{ id } } }
+              `, { projectId: project.id, contentId: issueId });
+              itemId = addRes.addProjectV2ItemById.item.id;
+            }
+
+            // Set Status if needed
+            if (desiredStatus && statusField) {
+              const opt = statusField.options.find(o => o.name === desiredStatus);
+              if (opt) {
+                await github.graphql(`
+                  mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:String!) {
+                    updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId }}){ projectV2Item { id } }
+                  }
+                `, { projectId: project.id, itemId, fieldId: statusField.id, optionId: opt.id });
+              }
+            }
+  claim:
+    if: github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment.body || '';
+            if (!/^\/claim\b/.test(body)) return;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const actor = context.actor;
+            // Assign commenter
+            await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [actor] });
+            // Add in-progress label
+            try {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['in-progress'] });
+            } catch (e) {
+              core.warning('Failed to add in-progress label: ' + e.message);
+            }

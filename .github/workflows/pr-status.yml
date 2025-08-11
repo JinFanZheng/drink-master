@@ -1,0 +1,35 @@
+name: PR status sync (review->in-progress->done)
+on:
+  pull_request:
+    types: [opened, ready_for_review, converted_to_draft, closed]
+
+jobs:
+  pr-status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = pr.body || '';
+            const refs = [...body.matchAll(/(?:Fixes|Closes)\s+#(\d+)/gi)].map(m => Number(m[1]));
+            if (refs.length === 0) return;
+
+            const addReview = ['opened','ready_for_review'].includes(context.payload.action);
+            const removeReview = context.payload.action === 'converted_to_draft';
+            const isMergedOrClosed = context.payload.action === 'closed' && pr.merged === true;
+
+            for (const num of refs) {
+              if (addReview) {
+                try { await github.rest.issues.addLabels({ owner, repo, issue_number: num, labels: ['review'] }); } catch {}
+              }
+              if (removeReview) {
+                try { await github.rest.issues.removeLabel({ owner, repo, issue_number: num, name: 'review' }); } catch {}
+              }
+              if (isMergedOrClosed) {
+                // Close the linked issue if not already, rely on Fixes to auto-close; ensure label cleanup
+                try { await github.rest.issues.removeLabel({ owner, repo, issue_number: num, name: 'review' }); } catch {}
+              }
+            }

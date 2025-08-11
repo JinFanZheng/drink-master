@@ -1,0 +1,144 @@
+# GitHub Labels Configuration
+# Use: gh label sync --file .github/labels.yml
+
+# 优先级标签
+- name: "priority-high"
+  color: "d73a4a"
+  description: "P0 - 必须本Sprint完成"
+
+- name: "priority-medium"
+  color: "fbca04"
+  description: "P1 - 重要但可延期"
+
+- name: "priority-low"
+  color: "0e8a16"
+  description: "P2 - 有时间再做"
+
+# 领域标签
+- name: "backend"
+  color: "1f77b4"
+  description: "后端开发任务"
+
+- name: "api"
+  color: "ff7f0e"
+  description: "API接口相关"
+
+- name: "docs"
+  color: "2ca02c"
+  description: "文档相关任务"
+
+- name: "test"
+  color: "d62728"
+  description: "测试相关"
+
+- name: "epic"
+  color: "9467bd"
+  description: "Epic任务（包含多个子任务）"
+
+- name: "product"
+  color: "8c564b"
+  description: "产品需求类Issue"
+
+# 状态标签
+- name: "in-progress"
+  color: "0052cc"
+  description: "正在进行中"
+
+- name: "blocked"
+  color: "b60205"
+  description: "被阻塞，需要协调"
+
+- name: "review"
+  color: "5319e7"
+  description: "等待review或验收"
+
+- name: "needs-human-review"
+  color: "d4c5f9"
+  description: "需要人工审核"
+
+- name: "needs-rebase"
+  color: "fbca04"
+  description: "需要更新分支"
+
+# 类型标签
+- name: "bug"
+  color: "d73a4a"
+  description: "Bug报告"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "功能增强"
+
+- name: "feature"
+  color: "0e8a16"
+  description: "新功能"
+
+- name: "refactor"
+  color: "fef2c0"
+  description: "代码重构"
+
+- name: "performance"
+  color: "1f77b4"
+  description: "性能优化"
+
+- name: "security"
+  color: "b60205"
+  description: "安全相关"
+
+# 特殊标签
+- name: "dependencies"
+  color: "0366d6"
+  description: "依赖更新"
+
+- name: "breaking-change"
+  color: "d73a4a"
+  description: "破坏性变更"
+
+- name: "urgent"
+  color: "b60205"
+  description: "紧急修复"
+
+- name: "hotfix"
+  color: "d73a4a"
+  description: "热修复"
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "适合新手的任务"
+
+- name: "help wanted"
+  color: "008672"
+  description: "需要帮助"
+
+- name: "question"
+  color: "d876e3"
+  description: "问题咨询"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "不会修复"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "重复问题"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "无效问题"
+
+# 技术标签
+- name: "go"
+  color: "00add8"
+  description: "Go相关"
+
+- name: "docker"
+  color: "2496ed"
+  description: "Docker相关"
+
+- name: "mysql"
+  color: "00758f"
+  description: "MySQL数据库相关"
+
+- name: "github-actions"
+  color: "2088ff"
+  description: "GitHub Actions相关"

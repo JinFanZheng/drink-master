@@ -1,23 +1,25 @@
-# 🍹 Drink Master
+# 🏪 Smart Vending Machine Platform
 
-> 基于Agent协作框架的Go+Gin+MySQL饮品管理系统
+> 基于Agent协作框架的智能售货机管理平台 - Go+Gin+MySQL
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![Framework](https://img.shields.io/badge/Framework-Gin-green.svg)](https://gin-gonic.com)
 [![Database](https://img.shields.io/badge/Database-MySQL-orange.svg)](https://www.mysql.com)
+[![WeChat Pay](https://img.shields.io/badge/Payment-WeChat-green.svg)](https://pay.weixin.qq.com)
 
 ## 🎯 项目简介
 
-Drink Master是一个现代化的饮品管理系统，采用契约优先开发模式和Agent协作框架，提供完整的饮品记录、统计分析和用户管理功能。
+智能售货机平台是一个现代化的IoT设备管理和电商系统，为消费者提供便捷的饮品购买体验，为设备运营商提供高效的设备管理和盈利工具。
 
 ### 核心特性
-- 🔐 JWT用户认证系统
-- 🍺 完整的饮品CRUD操作
-- 📊 消费统计和趋势分析
-- 🏷️ 饮品分类管理
+- 🔐 微信登录和JWT认证系统
+- 🏪 售货机设备管理和监控
+- 🥤 商品管理和库存同步
+- 📱 移动端用户购买体验
+- 💰 微信支付集成和自动退款
+- 📊 销售数据统计和运营分析
+- 🔄 MQTT设备实时通信
 - ⚡ 高性能API响应 (<500ms)
-- 📝 自动生成API文档
-- 🔄 支持Mock模式开发
 
 ## 🏗️ 技术架构
 
@@ -25,7 +27,9 @@ Drink Master是一个现代化的饮品管理系统，采用契约优先开发�
 - **后端**: Go 1.21+ + Gin Framework
 - **数据库**: MySQL 8.0+
 - **ORM**: GORM
-- **认证**: JWT (golang-jwt/jwt)
+- **认证**: JWT + 微信登录
+- **支付**: 微信支付API
+- **设备通信**: MQTT协议
 - **配置**: 环境变量 + .env文件
 
 ### 项目结构
@@ -34,14 +38,22 @@ drink-master/
 ├── cmd/server/                  # 应用程序入口
 ├── internal/                    # 内部包，不对外暴露
 │   ├── handlers/               # HTTP处理器 (Controller层)
-│   ├── services/               # 业务逻辑层 (Service层)
-│   ├── repositories/           # 数据访问层 (Repository层)
+│   │   ├── member.go           # 用户管理接口
+│   │   ├── machine.go          # 售货机管理
+│   │   ├── product.go          # 商品管理
+│   │   ├── order.go            # 订单管理
+│   │   └── payment.go          # 支付相关
+│   ├── services/               # 业务逻辑层
+│   ├── repositories/           # 数据访问层
 │   ├── models/                 # 数据模型 (Entity层)
 │   ├── contracts/              # API契约定义
 │   └── middleware/             # Gin中间件
 ├── pkg/                        # 可复用的公共包
+│   ├── wechat/                 # 微信SDK封装
+│   └── mqtt/                   # MQTT客户端
 ├── migrations/                 # 数据库迁移脚本
 ├── docs/                       # 项目文档
+│   └── PRD/                    # 产品需求文档
 ├── Makefile                    # 开发工具命令
 └── CLAUDE.md                   # Agent协作指南
 ```
@@ -80,7 +92,7 @@ make install-tools
 ### 4. 数据库准备
 ```bash
 # 创建数据库
-mysql -u root -p -e "CREATE DATABASE drink_master_dev"
+mysql -u root -p -e "CREATE DATABASE vending_machine_dev"
 
 # 运行数据库迁移
 make db-migrate
@@ -149,58 +161,126 @@ make deploy-check     # 部署前完整验证
 
 ## 📡 API接口
 
-### 认证相关
+### 用户认证
 ```bash
-# 用户注册
-POST /api/auth/register
+# 检查用户登录状态
+GET /api/Account/CheckLogin
+Authorization: Bearer <token>
+
+# 微信登录
+POST /api/Account/WeChatLogin
 {
-  "username": "user123",
-  "email": "user@example.com", 
-  "password": "password123"
+  "appId": "wx1234567890",
+  "code": "wx_js_code", 
+  "avatarUrl": "https://avatar.url",
+  "nickName": "用户昵称"
 }
 
-# 用户登录
-POST /api/auth/login
+# 获取用户信息
+GET /api/Account/GetUserInfo
+Authorization: Bearer <token>
+
+# 检查用户信息（通过code）
+GET /api/Account/CheckUserInfo?code=wx_code&appId=wx_app_id
+```
+
+### 会员管理
+```bash
+# 更新会员信息
+POST /api/Member/Update
+Authorization: Bearer <token>
 {
-  "username": "user123",
-  "password": "password123"
+  "nickname": "新昵称",
+  "avatar": "新头像URL"
+}
+
+# 添加加盟意向
+POST /api/Member/AddFranchiseIntention
+Authorization: Bearer <token>
+{
+  "contactName": "联系人",
+  "contactPhone": "联系电话",
+  "intendedLocation": "意向地点"
 }
 ```
 
-### 饮品管理
+### 售货机管理
 ```bash
-# 获取饮品列表
-GET /api/drinks?category=coffee&limit=10&offset=0
-
-# 创建饮品记录
-POST /api/drinks
+# 获取售货机分页列表
+POST /api/Machine/GetPaging
+Authorization: Bearer <token>
 {
-  "name": "拿铁咖啡",
-  "category": "coffee",
-  "price": 25.5,
-  "description": "香浓拿铁"
+  "page": 1,
+  "pageSize": 10,
+  "keyword": "搜索关键词"
 }
 
-# 获取单个饮品
-GET /api/drinks/:id
+# 获取售货机列表
+GET /api/Machine/GetList
+Authorization: Bearer <token>
 
-# 更新饮品信息
-PUT /api/drinks/:id
+# 获取售货机详情
+GET /api/Machine/Get?id=machine_id
 
-# 删除饮品
-DELETE /api/drinks/:id
+# 检查设备是否存在
+GET /api/Machine/CheckDeviceExist?deviceId=device_id
+
+# 获取售货机商品列表
+GET /api/Machine/GetProductList?machineId=machine_id
+
+# 开关营业状态
+GET /api/Machine/OpenOrClose?id=machine_id
+Authorization: Bearer <token>
 ```
 
-### 消费统计
+### 订单管理
 ```bash
-# 消费统计
-GET /api/stats/consumption?period=week
+# 获取我的订单列表
+POST /api/Order/GetPaging
+Authorization: Bearer <token>
+{
+  "page": 1,
+  "pageSize": 10
+}
 
-# 热门饮品
-GET /api/stats/popular?limit=10
+# 获取订单详情
+GET /api/Order/Get?id=order_id
 
-# 消费趋势
-GET /api/stats/trends?period=month
+# 创建订单
+POST /api/Order/Create
+Authorization: Bearer <token>
+{
+  "machineId": "售货机ID",
+  "productId": "商品ID", 
+  "hasCup": true,
+  "quantity": 1
+}
+
+# 申请退款（机主权限）
+POST /api/Order/Refund
+Authorization: Bearer <token>
+{
+  "orderId": "订单ID",
+  "refundReason": "退款原因"
+}
+```
+
+### 支付管理
+```bash
+# 获取支付信息（发起支付）
+GET /api/Payment/Get?orderId=order_id
+Authorization: Bearer <token>
+
+# 查询支付结果
+GET /api/Payment/Query?orderId=order_id
+Authorization: Bearer <token>
+```
+
+### 回调接口
+```bash
+# 微信支付结果回调
+POST /api/Callback/PaymentResult
+# 第三方支付平台调用，无需认证
 ```
 
 ### 系统相关

@@ -1,0 +1,77 @@
+name: Product idea
+description: Capture a product problem/opportunity
+title: 'product: <short headline>'
+labels: ['product','priority-medium']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement & audience
+      description: What problem are we solving and for whom?
+      placeholder: |
+        ## 问题描述
+        用户很难跟踪自己的饮品消费习惯，不知道每月在饮品上花费了多少钱，也无法了解自己的偏好趋势。
+        
+        ## 目标用户
+        - 关注健康饮食的上班族
+        - 希望控制饮品预算的学生
+        - 想要了解消费习惯的咖啡爱好者
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Success metrics
+      description: How will we measure success? (Adoption/Conversion/Cost/Satisfaction)
+      placeholder: |
+        ## 成功指标
+        - **用户采纳**: 月活跃用户 > 100
+        - **使用频率**: 平均每用户每周记录 > 5次饮品消费
+        - **用户满意度**: NPS评分 > 4.0/5.0
+        - **功能完成率**: 用户完成统计查看比例 > 70%
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / out of scope
+      description: What's included and what's not in this phase?
+      placeholder: |
+        ## 范围内
+        - 饮品消费记录
+        - 基础统计分析
+        - 个人消费趋势
+        - 热门饮品排行
+        
+        ## 范围外
+        - 社交分享功能
+        - 第三方支付集成
+        - 商家推荐系统
+        - 移动端应用
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks & dependencies
+      description: What could go wrong? What do we need to be successful?
+      placeholder: |
+        ## 风险
+        - 用户可能觉得手动记录太麻烦
+        - 统计数据可能不够吸引人
+        - 竞品功能更丰富
+        
+        ## 依赖
+        - 需要稳定的后端API服务
+        - 需要用户认证系统
+        - 需要数据库性能优化
+  - type: textarea
+    id: research
+    attributes:
+      label: User research insights
+      description: Any user feedback, surveys, or market research data
+      placeholder: |
+        ## 用户调研发现
+        - 70%的用户关心饮品预算控制
+        - 50%的用户想了解自己的饮品偏好
+        - 用户希望看到月度/年度消费报告

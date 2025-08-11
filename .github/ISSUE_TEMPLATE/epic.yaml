@@ -1,0 +1,67 @@
+name: Epic
+description: Create an epic (theme) issue with child tasks
+title: 'epic: <theme>'
+labels: ['epic','product','priority-medium']
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: Background & Goals
+      description: What is the business value and user problem being solved?
+      placeholder: |
+        ## 背景
+        用户需要能够记录和分析自己的饮品消费习惯，以便更好地管理健康和预算。
+        
+        ## 目标
+        - 提供完整的饮品消费追踪功能
+        - 支持统计分析和趋势展示
+        - 帮助用户了解消费习惯
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria (DoD)
+      description: How do we know this Epic is complete?
+      placeholder: |
+        - [ ] 用户可以记录饮品消费
+        - [ ] 用户可以查看消费统计
+        - [ ] 用户可以看到消费趋势分析
+        - [ ] 所有API响应时间 < 500ms
+        - [ ] 测试覆盖率 > 80%
+        - [ ] 完整的API文档
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Subtasks checklist (link issues)
+      description: List all subtasks with issue links
+      placeholder: |
+        ### Phase 1: 基础设施
+        - [ ] #XX 数据库模型设计
+        - [ ] #XX 用户认证系统
+        
+        ### Phase 2: 核心功能
+        - [ ] #XX 饮品CRUD API
+        - [ ] #XX 消费记录功能
+        - [ ] #XX 统计分析API
+        
+        ### Phase 3: 完善功能
+        - [ ] #XX API文档生成
+        - [ ] #XX 性能优化
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies & Risks
+      description: What other work needs to be completed first? What are the risks?
+      placeholder: |
+        ## 依赖
+        - 数据库环境搭建
+        - JWT认证机制实现
+        
+        ## 风险
+        - 数据库性能可能成为瓶颈
+        - 统计算法复杂度需要控制

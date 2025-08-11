@@ -67,23 +67,23 @@ type ServiceHealth struct {
 	Error       string    `json:"error,omitempty"`
 }
 
-// DrinkCategory 饮品分类
-type DrinkCategory struct {
+// Category 通用分类结构
+type Category struct {
 	ID          uint      `json:"id" example:"1"`
-	Name        string    `json:"name" example:"coffee"`
-	DisplayName string    `json:"display_name" example:"咖啡"`
-	Description string    `json:"description" example:"各类咖啡饮品"`
-	Icon        string    `json:"icon,omitempty" example:"☕"`
-	Color       string    `json:"color,omitempty" example:"#8B4513"`
-	DrinkCount  int       `json:"drink_count" example:"25"`    // 该分类下的饮品数量
+	Name        string    `json:"name" example:"category_name"`
+	DisplayName string    `json:"display_name" example:"显示名称"`
+	Description string    `json:"description" example:"分类描述"`
+	Icon        string    `json:"icon,omitempty" example:"icon"`
+	Color       string    `json:"color,omitempty" example:"#000000"`
+	ItemCount   int       `json:"item_count" example:"25"`    // 该分类下的项目数量
 	CreateAt    time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	UpdateAt    time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
 // CategoryListResponse 分类列表响应
 type CategoryListResponse struct {
-	Categories []DrinkCategory `json:"categories"`
-	Meta       *Meta           `json:"meta,omitempty"`
+	Categories []Category `json:"categories"`
+	Meta       *Meta      `json:"meta,omitempty"`
 }
 
 // MessageResponse 简单消息响应
@@ -125,9 +125,9 @@ type SearchRequest struct {
 
 // SearchResponse 搜索响应
 type SearchResponse struct {
-	Query   string          `json:"query" example:"latte"`
-	Results []DrinkResponse `json:"results"`
-	Meta    PaginationMeta  `json:"meta"`
+	Query   string         `json:"query" example:"keyword"`
+	Results []interface{}  `json:"results"`
+	Meta    PaginationMeta `json:"meta"`
 }
 
 // ExportRequest 导出请求
