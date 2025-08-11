@@ -54,7 +54,7 @@ func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 				Timestamp: time.Now(),
 				Path:      c.Request.URL.Path,
 				Method:    c.Request.Method,
-				RequestID: getRequestID(c),
+				RequestID: "",
 			},
 		})
 		return
@@ -109,12 +109,4 @@ func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
-}
-
-// getRequestID 获取请求ID的辅助函数
-func getRequestID(c *gin.Context) string {
-	if requestID, exists := c.Get("request_id"); exists {
-		return requestID.(string)
-	}
-	return ""
 }
