@@ -51,14 +51,18 @@ make lint && make test && make build  # 基础质量检查
 make lint && make test && make build  # 必须全部通过
 # 检查测试覆盖率是否达到80%+
 go tool cover -func=coverage.out | tail -1  # 必须显示 ≥80.0%
+# 检查代码格式化
+go fmt ./...  # 必须运行以确保代码格式正确
 git add . && git commit -m "feat: ..."  # Conventional Commits 格式
 ```
 
-**⚠️ 测试覆盖率约束（强制执行）：**
-- **必须达到80%以上**的测试覆盖率才能提交代码
+**⚠️ 代码质量约束（强制执行）：**
+- **测试覆盖率必须达到80%以上**才能提交代码
 - 使用 `go tool cover -func=coverage.out` 检查覆盖率
 - 如果覆盖率不足80%，**必须**添加更多测试用例
 - 重点关注0%覆盖率的函数和方法，优先编写测试
+- **代码格式化必须符合Go标准**，使用 `go fmt ./...` 格式化所有代码
+- CI中的gofmt检查失败会导致构建失败，必须修复后重新提交
 
 ### 第5步：PR 创建 (MANDATORY)
 ```bash
@@ -79,6 +83,7 @@ gh pr create --title "..." --body "Fixes #<issue-id> ..."
 - [ ] 实施开发并实时更新进度
 - [ ] 最终质量检查 (lint + test + build)
 - [ ] **验证测试覆盖率 ≥ 80%** (`go tool cover -func=coverage.out | tail -1`)
+- [ ] **检查代码格式化** (`go fmt ./...`)
 - [ ] 提交代码并创建 PR
 - [ ] 确保 PR 包含 `Fixes #<issue-id>`
 
@@ -130,6 +135,7 @@ git commit -m "resolve: merge conflicts with main"
 ## 4. 自检清单（提交前）
 - [ ] `make lint && make test && make build` 均通过
 - [ ] **测试覆盖率 ≥ 80%**：运行 `go tool cover -func=coverage.out | tail -1` 确认
+- [ ] **代码格式化正确**：运行 `go fmt ./...` 确保无格式化问题
 - [ ] 若改契约：PR 中说明，并更新 README"变更记录"
 - [ ] PR 描述包含 `Fixes #<issue-id>`；CI 绿灯
 - [ ] 接口返回包含必要信息（如错误码、分页信息），API文档更新
