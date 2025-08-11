@@ -23,7 +23,6 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// 初始化数据库
 	dbConfig := config.LoadDatabaseConfig()
 	db, err := config.NewDatabase(dbConfig)
 	if err != nil {
