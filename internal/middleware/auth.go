@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/ddteam/drink-master/internal/contracts"
 )
 
 // JWTClaims extends jwt.RegisteredClaims with custom fields
@@ -101,6 +102,7 @@ func JWTAuth() gin.HandlerFunc {
 func validateJWT(tokenString string) (*JWTClaims, error) {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
+		// #nosec G101 - This is a fallback for development only
 		jwtSecret = "default_jwt_secret_change_this_in_production"
 	}
 

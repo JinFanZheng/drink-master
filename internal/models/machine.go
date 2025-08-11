@@ -14,7 +14,7 @@ type Machine struct {
 	Address        string     `json:"address" gorm:"type:text"`
 	ServicePhone   *string    `json:"servicePhone" gorm:"type:varchar(20)"`
 	DeviceId       *string    `json:"deviceId" gorm:"type:varchar(100)"`
-	BusinessStatus string     `json:"businessStatus" gorm:"type:varchar(20);not null;default:'Open'"` // Open, Close, Offline
+	BusinessStatus string     `json:"businessStatus" gorm:"type:varchar(20);not null;default:'Open'"`
 	CreatedAt      time.Time  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
 	DeletedAt      *time.Time `json:"deletedAt" gorm:"index"`
