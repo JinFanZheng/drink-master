@@ -10,13 +10,13 @@ import (
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		
+
 		// 允许的源列表（生产环境应该配置具体域名）
 		allowedOrigins := map[string]bool{
-			"http://localhost:3000":  true,
-			"http://localhost:8080":  true,
-			"http://127.0.0.1:3000":  true,
-			"http://127.0.0.1:8080":  true,
+			"http://localhost:3000": true,
+			"http://localhost:8080": true,
+			"http://127.0.0.1:3000": true,
+			"http://127.0.0.1:8080": true,
 		}
 
 		// 在开发模式下允许所有源

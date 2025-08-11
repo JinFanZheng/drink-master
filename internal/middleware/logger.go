@@ -12,13 +12,13 @@ func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 记录开始时间
 		start := time.Now()
-		
+
 		// 记录请求ID（如果有）
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
 			requestID = generateRequestID()
 		}
-		
+
 		// 将请求ID添加到上下文
 		c.Set("request_id", requestID)
 		c.Header("X-Request-ID", requestID)
@@ -28,10 +28,10 @@ func RequestLogger() gin.HandlerFunc {
 
 		// 计算处理时间
 		latency := time.Since(start)
-		
+
 		// 获取状态码
 		status := c.Writer.Status()
-		
+
 		// 记录日志
 		log.Printf("[%s] %s %s %d %v | %s",
 			requestID,

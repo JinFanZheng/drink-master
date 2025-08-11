@@ -41,7 +41,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 // DatabaseHealth 数据库健康检查
 func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 	start := time.Now()
-	
+
 	// 测试数据库连接
 	sqlDB, err := h.db.DB()
 	if err != nil {
@@ -63,7 +63,7 @@ func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 	// 测试数据库Ping
 	err = sqlDB.Ping()
 	latency := time.Since(start)
-	
+
 	if err != nil {
 		response := contracts.HealthResponse{
 			Status:    "down",
@@ -78,14 +78,14 @@ func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 				},
 			},
 		}
-		
+
 		c.JSON(http.StatusServiceUnavailable, response)
 		return
 	}
 
 	// 获取数据库统计信息
 	stats := sqlDB.Stats()
-	
+
 	response := contracts.HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now(),
@@ -100,7 +100,7 @@ func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 	}
 
 	// 添加数据库连接池信息
-	if dbMeta, exists := c.Get("db_meta"); !exists {
+	if _, exists := c.Get("db_meta"); !exists {
 		c.Set("db_meta", map[string]interface{}{
 			"open_connections": stats.OpenConnections,
 			"in_use":           stats.InUse,

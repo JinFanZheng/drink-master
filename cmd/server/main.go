@@ -25,7 +25,7 @@ func main() {
 
 	// 初始化数据库
 	db := initDatabase()
-	
+
 	// TODO: 添加自动迁移
 	// if err := db.AutoMigrate(&models.YourModel{}); err != nil {
 	//     log.Fatal("Failed to migrate database:", err)
@@ -56,7 +56,7 @@ func initDatabase() *gorm.DB {
 	dbname := getEnvOrDefault("DB_NAME", "app_dev")
 
 	dsn := user + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbname + "?charset=utf8mb4&parseTime=True&loc=Local"
-	
+
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
