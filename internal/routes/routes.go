@@ -78,6 +78,15 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		payment.GET("/Query", paymentHandler.Query)
 	}
 
+	// 基于MachineOwnerController的路由 (机主管理功能)
+	machineOwnerHandler := handlers.NewMachineOwnerHandler(db)
+	machineOwner := router.Group("/api/machine-owners")
+	machineOwner.Use(middleware.JWTAuth()) // 所有机主接口都需要认证
+	{
+		machineOwner.GET("/sales", machineOwnerHandler.GetSales)
+		machineOwner.GET("/sales/stats", machineOwnerHandler.GetSalesStats)
+	}
+
 	// 回调接口 (无需认证)
 	callbackHandler := handlers.NewCallbackHandler(db)
 	router.POST("/api/Callback/PaymentResult", callbackHandler.PaymentResult)
