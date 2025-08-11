@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,13 @@ func NewAccountHandler(db *gorm.DB) *AccountHandler {
 // CheckUserInfo 检查用户信息
 // GET /api/Account/CheckUserInfo?code=wx_code&appId=wx_app_id
 func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
+	// 验证必需的openId参数
+	openId := c.Query("openId")
+	if openId == "" {
+		h.ValidationErrorResponse(c, fmt.Errorf("openId parameter is required"))
+		return
+	}
+
 	// TODO: 实现微信code验证逻辑
 	// 临时返回成功响应
 	response := map[string]interface{}{
@@ -40,6 +48,13 @@ func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
 // WeChatLogin 微信登录
 // POST /api/Account/WeChatLogin
 func (h *AccountHandler) WeChatLogin(c *gin.Context) {
+	// 验证JSON格式
+	var loginRequest map[string]interface{}
+	if err := c.ShouldBindJSON(&loginRequest); err != nil {
+		h.ValidationErrorResponse(c, fmt.Errorf("invalid JSON format: %v", err))
+		return
+	}
+
 	// TODO: 实现微信登录逻辑
 	// 临时返回成功响应
 	response := map[string]interface{}{
