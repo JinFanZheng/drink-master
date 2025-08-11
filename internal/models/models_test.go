@@ -22,7 +22,7 @@ func TestAutoMigrate(t *testing.T) {
 	}
 
 	// 验证表是否被创建
-	tables := []string{"members", "machine_owners", "machines", "products", "machine_product_prices", "orders"}
+	tables := []string{"members", "machine_owners", "machines", "products", "machine_product_prices", "orders", "franchise_intentions"}
 
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
@@ -39,7 +39,7 @@ func TestAllModels(t *testing.T) {
 	}
 
 	// 验证返回的模型数量
-	expectedCount := 6 // Member, MachineOwner, Machine, Product, MachineProductPrice, Order
+	expectedCount := 7 // Member, MachineOwner, Machine, Product, MachineProductPrice, Order, FranchiseIntention
 	if len(models) != expectedCount {
 		t.Errorf("Expected %d models, got %d", expectedCount, len(models))
 	}
