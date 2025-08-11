@@ -78,6 +78,14 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		payment.GET("/Query", paymentHandler.Query)
 	}
 
+	// 基于ProductController的路由
+	productHandler := handlers.NewProductHandler(db)
+	product := router.Group("/api/products")
+	{
+		// 公开接口
+		product.GET("/select", productHandler.GetSelectList)
+	}
+
 	// 回调接口 (无需认证)
 	callbackHandler := handlers.NewCallbackHandler(db)
 	router.POST("/api/Callback/PaymentResult", callbackHandler.PaymentResult)
