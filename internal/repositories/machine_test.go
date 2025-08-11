@@ -12,7 +12,7 @@ import (
 	"github.com/ddteam/drink-master/internal/models"
 )
 
-func setupTestDB(t *testing.T) *gorm.DB {
+func setupMachineTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 
@@ -29,7 +29,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 func TestMachineRepository_GetByID(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	// 创建测试数据
@@ -67,7 +67,7 @@ func TestMachineRepository_GetByID(t *testing.T) {
 }
 
 func TestMachineRepository_GetByDeviceID(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	deviceID := "device-123"
@@ -97,7 +97,7 @@ func TestMachineRepository_GetByDeviceID(t *testing.T) {
 }
 
 func TestMachineRepository_GetList(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	// 创建测试数据
@@ -151,7 +151,7 @@ func TestMachineRepository_GetList(t *testing.T) {
 }
 
 func TestMachineRepository_GetPaging(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	// 创建测试数据
@@ -217,7 +217,7 @@ func TestMachineRepository_GetPaging(t *testing.T) {
 }
 
 func TestMachineRepository_UpdateBusinessStatus(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	machine := &models.Machine{
@@ -247,7 +247,7 @@ func TestMachineRepository_UpdateBusinessStatus(t *testing.T) {
 }
 
 func TestMachineRepository_CheckDeviceExists(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
 	deviceID := "device-123"
