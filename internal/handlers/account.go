@@ -1,45 +1,89 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/services"
+	"github.com/ddteam/drink-master/pkg/wechat"
 )
 
 // AccountHandler 账户处理器 (对应MobileAPI AccountController)
 type AccountHandler struct {
 	*BaseHandler
+	memberService *services.MemberService
+	jwtService    *services.JWTService
+	cacheManager  *services.CacheManager
+	wechatClient  *wechat.Client
 }
 
 // NewAccountHandler 创建账户处理器
-func NewAccountHandler(db *gorm.DB) *AccountHandler {
+func NewAccountHandler(db *gorm.DB, wechatClient *wechat.Client) *AccountHandler {
 	return &AccountHandler{
-		BaseHandler: NewBaseHandler(db),
+		BaseHandler:   NewBaseHandler(db),
+		memberService: services.NewMemberService(db),
+		jwtService:    services.NewJWTService(),
+		cacheManager:  services.NewCacheManager(),
+		wechatClient:  wechatClient,
 	}
 }
 
 // CheckUserInfo 检查用户信息
 // GET /api/Account/CheckUserInfo?code=wx_code&appId=wx_app_id
 func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
-	// 验证必需的openId参数
-	openId := c.Query("openId")
-	if openId == "" {
-		h.ValidationErrorResponse(c, fmt.Errorf("openId parameter is required"))
+	var req contracts.CheckUserInfoRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		h.ValidationErrorResponse(c, err)
 		return
 	}
 
-	// TODO: 实现微信code验证逻辑
-	// 临时返回成功响应
+	// 验证微信code
+	session, err := h.wechatClient.JsCode2Session(req.Code)
+	if err != nil {
+		h.ErrorResponse(c, http.StatusBadRequest, contracts.ErrorCodeValidation, "微信验证失败: "+err.Error())
+		return
+	}
+
+	// 查找用户
+	member, err := h.memberService.FindByOpenID(session.OpenID)
+	if err != nil {
+		// 用户不存在，返回空用户信息
+		response := map[string]interface{}{
+			"success": true,
+			"data": contracts.CheckUserInfoResponse{
+				Id:             "",
+				AvatarUrl:      "",
+				Nickname:       "",
+				IsMachineOwner: false,
+				Token:          "",
+			},
+		}
+		c.JSON(http.StatusOK, response)
+		return
+	}
+
+	// 生成token
+	token, err := h.jwtService.GenerateToken(member)
+	if err != nil {
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	// 缓存登录状态
+	h.cacheManager.SetLoginStatus(member.ID, token)
+
+	// 返回用户信息
 	response := map[string]interface{}{
 		"success": true,
-		"data": map[string]interface{}{
-			"id":             "temp_user_id",
-			"avatarUrl":      "",
-			"nickname":       "临时用户",
-			"isMachineOwner": false,
-			"token":          "temp_token",
+		"data": contracts.CheckUserInfoResponse{
+			Id:             member.ID,
+			AvatarUrl:      member.Avatar,
+			Nickname:       member.Nickname,
+			IsMachineOwner: member.Role == "Owner",
+			Token:          token,
 		},
 	}
 	c.JSON(http.StatusOK, response)
@@ -48,23 +92,45 @@ func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
 // WeChatLogin 微信登录
 // POST /api/Account/WeChatLogin
 func (h *AccountHandler) WeChatLogin(c *gin.Context) {
-	// 验证JSON格式
-	var loginRequest map[string]interface{}
-	if err := c.ShouldBindJSON(&loginRequest); err != nil {
-		h.ValidationErrorResponse(c, fmt.Errorf("invalid JSON format: %v", err))
+	var req contracts.WeChatLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.ValidationErrorResponse(c, err)
 		return
 	}
 
-	// TODO: 实现微信登录逻辑
-	// 临时返回成功响应
+	// 验证微信code
+	session, err := h.wechatClient.JsCode2Session(req.Code)
+	if err != nil {
+		h.ErrorResponse(c, http.StatusBadRequest, contracts.ErrorCodeValidation, "微信验证失败: "+err.Error())
+		return
+	}
+
+	// 查找或创建用户
+	member, err := h.memberService.FindOrCreateByOpenID(session.OpenID, req.NickName, req.AvatarUrl)
+	if err != nil {
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	// 生成token
+	token, err := h.jwtService.GenerateToken(member)
+	if err != nil {
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	// 缓存登录状态
+	h.cacheManager.SetLoginStatus(member.ID, token)
+
+	// 返回用户信息
 	response := map[string]interface{}{
 		"success": true,
-		"data": map[string]interface{}{
-			"id":             "temp_user_id",
-			"avatarUrl":      "",
-			"nickname":       "临时用户",
-			"isMachineOwner": false,
-			"token":          "temp_token",
+		"data": contracts.WeChatLoginResponse{
+			Id:             member.ID,
+			AvatarUrl:      member.Avatar,
+			Nickname:       member.Nickname,
+			IsMachineOwner: member.Role == "Owner",
+			Token:          token,
 		},
 	}
 	c.JSON(http.StatusOK, response)
@@ -86,15 +152,21 @@ func (h *AccountHandler) GetUserInfo(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从数据库获取用户信息
-	// 临时返回成功响应
+	// 从数据库获取用户信息
+	member, err := h.memberService.FindByID(memberID)
+	if err != nil {
+		h.NotFoundResponse(c, "用户不存在")
+		return
+	}
+
+	// 返回用户信息
 	response := map[string]interface{}{
 		"success": true,
-		"data": map[string]interface{}{
-			"id":             memberID,
-			"avatarUrl":      "",
-			"nickname":       "用户",
-			"isMachineOwner": h.IsMachineOwner(c),
+		"data": contracts.GetUserInfoResponse{
+			Id:             member.ID,
+			AvatarUrl:      member.Avatar,
+			Nickname:       member.Nickname,
+			IsMachineOwner: member.Role == "Owner",
 		},
 	}
 	c.JSON(http.StatusOK, response)

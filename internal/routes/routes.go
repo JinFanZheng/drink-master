@@ -4,8 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/ddteam/drink-master/internal/config"
 	"github.com/ddteam/drink-master/internal/handlers"
 	"github.com/ddteam/drink-master/internal/middleware"
+	"github.com/ddteam/drink-master/pkg/wechat"
 )
 
 // SetupRoutes 设置所有路由 (基于MobileAPI Controllers)
@@ -21,8 +23,12 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	router.GET("/api/health", healthHandler.Health)
 	router.GET("/api/health/db", healthHandler.DatabaseHealth)
 
+	// 初始化微信客户端
+	wechatConfig := config.NewWeChatConfig()
+	wechatClient := wechat.NewClient(wechatConfig.AppID, wechatConfig.AppSecret)
+
 	// 基于AccountController的路由
-	accountHandler := handlers.NewAccountHandler(db)
+	accountHandler := handlers.NewAccountHandler(db, wechatClient)
 	account := router.Group("/api/Account")
 	{
 		// 公开接口
