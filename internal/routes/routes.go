@@ -78,6 +78,14 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		payment.GET("/Query", paymentHandler.Query)
 	}
 
+	// 基于ProductController的路由
+	productHandler := handlers.NewProductHandler(db)
+	product := router.Group("/api/products")
+	{
+		// 公开接口
+		product.GET("/select", productHandler.GetSelectList)
+	}
+
 	// 基于MachineOwnerController的路由 (机主管理功能)
 	machineOwnerHandler := handlers.NewMachineOwnerHandler(db)
 	machineOwner := router.Group("/api/machine-owners")
