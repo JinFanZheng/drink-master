@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/pkg/wechat"
 )
 
 func setupAccountTestRouter() (*gin.Engine, *AccountHandler) {
@@ -22,7 +24,8 @@ func setupAccountTestRouter() (*gin.Engine, *AccountHandler) {
 	}
 
 	router := gin.New()
-	accountHandler := NewAccountHandler(db)
+	wechatClient := wechat.NewClient("test_app_id", "test_app_secret")
+	accountHandler := NewAccountHandler(db, wechatClient)
 
 	router.GET("/api/Account/CheckUserInfo", accountHandler.CheckUserInfo)
 	router.POST("/api/Account/WeChatLogin", accountHandler.WeChatLogin)
@@ -34,7 +37,8 @@ func setupAccountTestRouter() (*gin.Engine, *AccountHandler) {
 
 func TestNewAccountHandler(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewAccountHandler(db)
+	wechatClient := wechat.NewClient("test_app_id", "test_app_secret")
+	handler := NewAccountHandler(db, wechatClient)
 
 	if handler == nil {
 		t.Error("Expected handler to be created")
@@ -44,7 +48,7 @@ func TestNewAccountHandler(t *testing.T) {
 func TestAccountHandler_CheckUserInfo(t *testing.T) {
 	router, _ := setupAccountTestRouter()
 
-	req, _ := http.NewRequest("GET", "/api/Account/CheckUserInfo?openId=test123", nil)
+	req, _ := http.NewRequest("GET", "/api/Account/CheckUserInfo?code=test123", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -58,10 +62,10 @@ func TestAccountHandler_CheckUserInfo(t *testing.T) {
 	}
 }
 
-func TestAccountHandler_CheckUserInfo_MissingOpenId(t *testing.T) {
+func TestAccountHandler_CheckUserInfo_MissingCode(t *testing.T) {
 	router, _ := setupAccountTestRouter()
 
-	// 不提供openId参数
+	// 不提供code参数
 	req, _ := http.NewRequest("GET", "/api/Account/CheckUserInfo", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -75,9 +79,10 @@ func TestAccountHandler_WeChatLogin(t *testing.T) {
 	router, _ := setupAccountTestRouter()
 
 	loginData := map[string]interface{}{
-		"code":          "test_code_123",
-		"iv":            "test_iv",
-		"encryptedData": "test_encrypted_data",
+		"code":      "test_code_123",
+		"nickName":  "Test User",
+		"avatarUrl": "http://example.com/avatar.jpg",
+		"appId":     "test_app_id",
 	}
 
 	jsonData, _ := json.Marshal(loginData)
