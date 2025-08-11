@@ -97,7 +97,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 func TestNewDatabase(t *testing.T) {
 	config := &DatabaseConfig{
 		Host:     "localhost",
-		Port:     "3306", 
+		Port:     "3306",
 		User:     "root",
 		Password: "",
 		DBName:   "test",

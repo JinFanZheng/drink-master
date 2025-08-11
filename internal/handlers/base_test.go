@@ -26,7 +26,7 @@ func TestNewBaseHandler(t *testing.T) {
 	}
 
 	handler := NewBaseHandler(db)
-	
+
 	if handler.db != db {
 		t.Error("Expected handler.db to be set correctly")
 	}
@@ -36,7 +36,7 @@ func TestBaseHandler_GetMemberID(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, _ := setupBaseTestContext()
-	
+
 	// 测试没有member_id的情况
 	memberID, exists := handler.GetMemberID(c)
 	if exists {
@@ -45,7 +45,7 @@ func TestBaseHandler_GetMemberID(t *testing.T) {
 	if memberID != "" {
 		t.Error("Expected memberID to be empty when not exists")
 	}
-	
+
 	// 设置member_id并测试
 	c.Set("member_id", "test_member_123")
 	memberID, exists = handler.GetMemberID(c)
@@ -61,7 +61,7 @@ func TestBaseHandler_GetMachineOwnerID(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, _ := setupBaseTestContext()
-	
+
 	// 测试没有machine_owner_id的情况
 	ownerID, exists := handler.GetMachineOwnerID(c)
 	if exists {
@@ -70,7 +70,7 @@ func TestBaseHandler_GetMachineOwnerID(t *testing.T) {
 	if ownerID != "" {
 		t.Error("Expected ownerID to be empty when not exists")
 	}
-	
+
 	// 设置machine_owner_id并测试
 	c.Set("machine_owner_id", "test_owner_456")
 	ownerID, exists = handler.GetMachineOwnerID(c)
@@ -86,18 +86,18 @@ func TestBaseHandler_IsMachineOwner(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, _ := setupBaseTestContext()
-	
+
 	// 测试没有role的情况
 	if handler.IsMachineOwner(c) {
 		t.Error("Expected IsMachineOwner to return false when no role is set")
 	}
-	
+
 	// 设置非Owner角色
 	c.Set("role", "Member")
 	if handler.IsMachineOwner(c) {
 		t.Error("Expected IsMachineOwner to return false for Member role")
 	}
-	
+
 	// 设置Owner角色
 	c.Set("role", "Owner")
 	if !handler.IsMachineOwner(c) {
@@ -109,7 +109,7 @@ func TestBaseHandler_GetCurrentRole(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, _ := setupBaseTestContext()
-	
+
 	// 测试没有role的情况
 	role, exists := handler.GetCurrentRole(c)
 	if exists {
@@ -118,7 +118,7 @@ func TestBaseHandler_GetCurrentRole(t *testing.T) {
 	if role != "" {
 		t.Error("Expected role to be empty when not exists")
 	}
-	
+
 	// 设置role并测试
 	c.Set("role", "Member")
 	role, exists = handler.GetCurrentRole(c)
@@ -134,10 +134,10 @@ func TestBaseHandler_ValidationErrorResponse(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, w := setupBaseTestContext()
-	
+
 	err := fmt.Errorf("validation failed")
 	handler.ValidationErrorResponse(c, err)
-	
+
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
@@ -147,9 +147,9 @@ func TestBaseHandler_NotFoundResponse(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, w := setupBaseTestContext()
-	
+
 	handler.NotFoundResponse(c, "Resource not found")
-	
+
 	if w.Code != http.StatusNotFound {
 		t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
 	}
@@ -159,9 +159,9 @@ func TestBaseHandler_ForbiddenResponse(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, w := setupBaseTestContext()
-	
+
 	handler.ForbiddenResponse(c, "Access denied")
-	
+
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Expected status %d, got %d", http.StatusForbidden, w.Code)
 	}
@@ -171,10 +171,10 @@ func TestBaseHandler_InternalErrorResponse(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	handler := NewBaseHandler(db)
 	c, w := setupBaseTestContext()
-	
+
 	err := fmt.Errorf("internal error")
 	handler.InternalErrorResponse(c, err)
-	
+
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
 	}

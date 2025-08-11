@@ -23,7 +23,7 @@ func TestAutoMigrate(t *testing.T) {
 
 	// 验证表是否被创建
 	tables := []string{"members", "machine_owners", "machines", "products", "machine_product_prices", "orders"}
-	
+
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			t.Errorf("Table %s was not created", table)
@@ -33,7 +33,7 @@ func TestAutoMigrate(t *testing.T) {
 
 func TestAllModels(t *testing.T) {
 	models := AllModels()
-	
+
 	if len(models) == 0 {
 		t.Error("AllModels returned empty slice")
 	}
@@ -242,7 +242,7 @@ func TestProductAndPriceModel(t *testing.T) {
 	// 创建机器（简化）
 	owner := MachineOwner{ID: "owner-001", Name: "Owner"}
 	db.Create(&owner)
-	
+
 	machine := Machine{
 		ID:             "machine-001",
 		MachineOwnerId: owner.ID,
@@ -322,7 +322,7 @@ func TestOrderModel(t *testing.T) {
 	paymentTime := time.Now()
 	channelOrderNo := "CHANNEL_ORDER_123"
 	refundReason := "商品有问题"
-	
+
 	order := Order{
 		ID:             "test-order-001",
 		MemberId:       member.ID,
@@ -394,7 +394,7 @@ func TestModelConstraints(t *testing.T) {
 	}
 
 	member2 := Member{
-		ID:           "member-002", 
+		ID:           "member-002",
 		Nickname:     "User2",
 		WeChatOpenId: "same_openid", // 相同的openid应该失败
 		Role:         "Member",

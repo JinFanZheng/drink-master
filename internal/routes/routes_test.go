@@ -21,18 +21,18 @@ func setupTestDB() *gorm.DB {
 func TestSetupRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db := setupTestDB()
-	
+
 	router := SetupRoutes(db)
-	
+
 	if router == nil {
 		t.Error("Expected router to be created")
 	}
-	
+
 	// 测试健康检查路由
 	req, _ := http.NewRequest("GET", "/api/health", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
 	}
@@ -41,14 +41,14 @@ func TestSetupRoutes(t *testing.T) {
 func TestSetupRoutes_DatabaseHealth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db := setupTestDB()
-	
+
 	router := SetupRoutes(db)
-	
+
 	// 测试数据库健康检查路由
 	req, _ := http.NewRequest("GET", "/api/health/db", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
 	}

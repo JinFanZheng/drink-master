@@ -42,12 +42,12 @@ func generateTestJWT() (string, error) {
 
 func TestJWTAuth_NoAuthorizationHeader(t *testing.T) {
 	router := setupTestAuth()
-	
+
 	req, _ := http.NewRequest("GET", "/protected", nil)
 	w := httptest.NewRecorder()
-	
+
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
 	}
@@ -55,13 +55,13 @@ func TestJWTAuth_NoAuthorizationHeader(t *testing.T) {
 
 func TestJWTAuth_InvalidAuthorizationFormat(t *testing.T) {
 	router := setupTestAuth()
-	
+
 	req, _ := http.NewRequest("GET", "/protected", nil)
 	req.Header.Set("Authorization", "InvalidFormat token123")
 	w := httptest.NewRecorder()
-	
+
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
 	}
@@ -69,13 +69,13 @@ func TestJWTAuth_InvalidAuthorizationFormat(t *testing.T) {
 
 func TestJWTAuth_InvalidToken(t *testing.T) {
 	router := setupTestAuth()
-	
+
 	req, _ := http.NewRequest("GET", "/protected", nil)
 	req.Header.Set("Authorization", "Bearer invalid_token_string")
 	w := httptest.NewRecorder()
-	
+
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
 	}
@@ -83,18 +83,18 @@ func TestJWTAuth_InvalidToken(t *testing.T) {
 
 func TestJWTAuth_ValidToken(t *testing.T) {
 	router := setupTestAuth()
-	
+
 	token, err := generateTestJWT()
 	if err != nil {
 		t.Fatalf("Failed to generate test JWT: %v", err)
 	}
-	
+
 	req, _ := http.NewRequest("GET", "/protected", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	
+
 	router.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
 	}
@@ -105,20 +105,20 @@ func TestValidateJWT_ValidToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to generate test JWT: %v", err)
 	}
-	
+
 	claims, err := validateJWT(token)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	
+
 	if claims.MemberID != "test_member_123" {
 		t.Errorf("Expected MemberID to be 'test_member_123', got '%s'", claims.MemberID)
 	}
-	
+
 	if claims.MachineOwnerID != "test_owner_456" {
 		t.Errorf("Expected MachineOwnerID to be 'test_owner_456', got '%s'", claims.MachineOwnerID)
 	}
-	
+
 	if claims.Role != "Member" {
 		t.Errorf("Expected Role to be 'Member', got '%s'", claims.Role)
 	}
@@ -134,7 +134,7 @@ func TestValidateJWT_InvalidToken(t *testing.T) {
 func TestGetCurrentMemberID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	
+
 	// 测试没有member_id的情况
 	memberID, exists := GetCurrentMemberID(c)
 	if exists {
@@ -143,7 +143,7 @@ func TestGetCurrentMemberID(t *testing.T) {
 	if memberID != "" {
 		t.Error("Expected memberID to be empty when not exists")
 	}
-	
+
 	// 设置member_id并测试
 	c.Set("member_id", "test_member_789")
 	memberID, exists = GetCurrentMemberID(c)
@@ -158,7 +158,7 @@ func TestGetCurrentMemberID(t *testing.T) {
 func TestGetCurrentMachineOwnerID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	
+
 	// 测试没有machine_owner_id的情况
 	ownerID, exists := GetCurrentMachineOwnerID(c)
 	if exists {
@@ -167,7 +167,7 @@ func TestGetCurrentMachineOwnerID(t *testing.T) {
 	if ownerID != "" {
 		t.Error("Expected ownerID to be empty when not exists")
 	}
-	
+
 	// 设置machine_owner_id并测试
 	c.Set("machine_owner_id", "test_owner_101112")
 	ownerID, exists = GetCurrentMachineOwnerID(c)
@@ -182,7 +182,7 @@ func TestGetCurrentMachineOwnerID(t *testing.T) {
 func TestGetCurrentRole(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	
+
 	// 测试没有role的情况
 	role, exists := GetCurrentRole(c)
 	if exists {
@@ -191,7 +191,7 @@ func TestGetCurrentRole(t *testing.T) {
 	if role != "" {
 		t.Error("Expected role to be empty when not exists")
 	}
-	
+
 	// 设置role并测试
 	c.Set("role", "Owner")
 	role, exists = GetCurrentRole(c)
@@ -206,18 +206,18 @@ func TestGetCurrentRole(t *testing.T) {
 func TestIsMachineOwner(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	
+
 	// 测试没有role的情况
 	if IsMachineOwner(c) {
 		t.Error("Expected IsMachineOwner to return false when no role is set")
 	}
-	
+
 	// 设置非Owner角色
 	c.Set("role", "Member")
 	if IsMachineOwner(c) {
 		t.Error("Expected IsMachineOwner to return false for Member role")
 	}
-	
+
 	// 设置Owner角色
 	c.Set("role", "Owner")
 	if !IsMachineOwner(c) {
