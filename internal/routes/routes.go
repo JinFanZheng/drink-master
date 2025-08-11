@@ -41,6 +41,7 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	{
 		member.POST("/Update", memberHandler.Update)
 		member.POST("/AddFranchiseIntention", memberHandler.AddFranchiseIntention)
+		member.GET("/GetUserInfo", memberHandler.GetUserInfo)
 	}
 
 	// 基于MachineController的路由
