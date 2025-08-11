@@ -210,3 +210,23 @@ func TestMemberRepository_GetMemberWithFranchiseIntentions(t *testing.T) {
 		t.Errorf("expected intention ID '%s', got '%s'", intention.ID, intentions[0].ID)
 	}
 }
+
+func TestMemberRepository_Delete(t *testing.T) {
+	db := setupTestDB(t)
+	memberRepo := NewMemberRepository(db)
+
+	// 创建测试会员
+	testMember := createTestMember(t, db)
+
+	// 删除会员
+	err := memberRepo.Delete(testMember.ID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// 验证删除
+	_, err = memberRepo.GetByID(testMember.ID)
+	if err == nil {
+		t.Error("expected error when getting deleted member")
+	}
+}
