@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/ddteam/drink-master/internal/enums"
 )
 
 // Order represents the order entity
@@ -14,10 +16,10 @@ type Order struct {
 	HasCup         bool       `json:"hasCup" gorm:"default:true"`
 	TotalAmount    float64    `json:"totalAmount" gorm:"type:decimal(10,2);not null"`
 	PayAmount      float64    `json:"payAmount" gorm:"type:decimal(10,2);not null"`
-	PaymentStatus  string     `json:"paymentStatus" gorm:"type:varchar(20);not null;default:'WaitPay'"`
+	PaymentStatus  int        `json:"paymentStatus" gorm:"type:int;not null;default:0"`
 	PaymentTime    *time.Time `json:"paymentTime"`
 	ChannelOrderNo *string    `json:"channelOrderNo" gorm:"type:varchar(100)"`
-	MakeStatus     string     `json:"makeStatus" gorm:"type:varchar(20);not null;default:'WaitMake'"`
+	MakeStatus     int        `json:"makeStatus" gorm:"type:int;not null;default:0"`
 	RefundTime     *time.Time `json:"refundTime"`
 	RefundAmount   float64    `json:"refundAmount" gorm:"type:decimal(10,2);default:0"`
 	RefundReason   *string    `json:"refundReason" gorm:"type:text"`
@@ -34,4 +36,14 @@ type Order struct {
 // TableName returns the table name for Order
 func (Order) TableName() string {
 	return "orders"
+}
+
+// GetPaymentStatusDesc 获取支付状态描述
+func (o *Order) GetPaymentStatusDesc() string {
+	return enums.GetPaymentStatusDesc(enums.PaymentStatus(o.PaymentStatus))
+}
+
+// GetMakeStatusDesc 获取制作状态描述
+func (o *Order) GetMakeStatusDesc() string {
+	return enums.GetMakeStatusDesc(enums.MakeStatus(o.MakeStatus))
 }
