@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,11 +27,20 @@ jobs:
           fetch-depth: 0  # 获取完整历史以便进行风险分析
 
 
+      - name: Get PR Number
+        id: get-pr-number
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.number }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: PR Risk Assessment
         id: risk-assessment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "🔍 分析PR风险等级..."
           
@@ -70,7 +85,7 @@ jobs:
         id: basic-checks
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "🔍 执行基础验证检查..."
           
@@ -98,7 +113,7 @@ jobs:
         if: steps.basic-checks.outputs.mergeable == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "🔍 检查CI状态..."
           
@@ -126,7 +141,7 @@ jobs:
         if: steps.risk-assessment.outputs.risk_level == 'medium' || steps.risk-assessment.outputs.risk_level == 'high'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "🧪 执行额外验证..."
           
@@ -145,7 +160,7 @@ jobs:
         if: steps.risk-assessment.outputs.risk_level != 'low'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "🤖 GitHub Copilot代码审查..."
           
@@ -164,7 +179,7 @@ jobs:
       - name: Auto Merge Decision
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
           RISK_LEVEL: ${{ steps.risk-assessment.outputs.risk_level }}
           RISK_REASONS: ${{ steps.risk-assessment.outputs.risk_reasons }}
         run: |
@@ -197,7 +212,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ steps.get-pr-number.outputs.pr_number }}
         run: |
           echo "❌ 自动处理失败，添加标签并通知"
           gh pr edit $PR_NUMBER --add-label "auto-merge-failed"
