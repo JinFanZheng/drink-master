@@ -22,25 +22,25 @@ type Meta struct {
 
 // PaginationMeta 分页元数据
 type PaginationMeta struct {
-	Total       int64 `json:"total" example:"100"`         // 总记录数
-	Count       int   `json:"count" example:"10"`          // 当前页记录数
-	PerPage     int   `json:"per_page" example:"10"`       // 每页记录数
-	CurrentPage int   `json:"current_page" example:"1"`    // 当前页码
-	TotalPages  int   `json:"total_pages" example:"10"`    // 总页数
-	HasNext     bool  `json:"has_next" example:"true"`     // 是否有下一页
-	HasPrev     bool  `json:"has_prev" example:"false"`    // 是否有上一页
-	*Meta              // 继承通用元数据
+	Total       int64 `json:"total" example:"100"`      // 总记录数
+	Count       int   `json:"count" example:"10"`       // 当前页记录数
+	PerPage     int   `json:"per_page" example:"10"`    // 每页记录数
+	CurrentPage int   `json:"current_page" example:"1"` // 当前页码
+	TotalPages  int   `json:"total_pages" example:"10"` // 总页数
+	HasNext     bool  `json:"has_next" example:"true"`  // 是否有下一页
+	HasPrev     bool  `json:"has_prev" example:"false"` // 是否有上一页
+	*Meta             // 继承通用元数据
 }
 
 // APIError 错误响应结构
 type APIError struct {
-	Code       string                 `json:"code" example:"VALIDATION_ERROR"`
-	Message    string                 `json:"message" example:"请求参数验证失败"`
-	Details    map[string]interface{} `json:"details,omitempty"`
-	Timestamp  time.Time              `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Path       string                 `json:"path" example:"/api/drinks"`
-	Method     string                 `json:"method" example:"POST"`
-	RequestID  string                 `json:"request_id" example:"req_123456"`
+	Code      string                 `json:"code" example:"VALIDATION_ERROR"`
+	Message   string                 `json:"message" example:"请求参数验证失败"`
+	Details   map[string]interface{} `json:"details,omitempty"`
+	Timestamp time.Time              `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Path      string                 `json:"path" example:"/api/drinks"`
+	Method    string                 `json:"method" example:"POST"`
+	RequestID string                 `json:"request_id" example:"req_123456"`
 }
 
 // ValidationError 验证错误详情
@@ -53,15 +53,15 @@ type ValidationError struct {
 
 // HealthResponse 健康检查响应
 type HealthResponse struct {
-	Status    string                 `json:"status" example:"ok"`
-	Timestamp time.Time              `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Version   string                 `json:"version" example:"1.0.0"`
+	Status    string                   `json:"status" example:"ok"`
+	Timestamp time.Time                `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Version   string                   `json:"version" example:"1.0.0"`
 	Services  map[string]ServiceHealth `json:"services"`
 }
 
 // ServiceHealth 服务健康状态
 type ServiceHealth struct {
-	Status      string    `json:"status" example:"ok"`         // ok, degraded, down
+	Status      string    `json:"status" example:"ok"` // ok, degraded, down
 	Latency     string    `json:"latency,omitempty" example:"2ms"`
 	LastChecked time.Time `json:"last_checked" example:"2023-01-01T00:00:00Z"`
 	Error       string    `json:"error,omitempty"`
@@ -75,7 +75,7 @@ type Category struct {
 	Description string    `json:"description" example:"分类描述"`
 	Icon        string    `json:"icon,omitempty" example:"icon"`
 	Color       string    `json:"color,omitempty" example:"#000000"`
-	ItemCount   int       `json:"item_count" example:"25"`    // 该分类下的项目数量
+	ItemCount   int       `json:"item_count" example:"25"` // 该分类下的项目数量
 	CreateAt    time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	UpdateAt    time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
@@ -115,12 +115,12 @@ type BulkOperationResponse struct {
 
 // SearchRequest 搜索请求
 type SearchRequest struct {
-	Query    string   `form:"q" example:"latte"`                               // 搜索关键词
-	Fields   []string `form:"fields" example:"name,description"`               // 搜索字段
-	Category string   `form:"category" example:"coffee"`                       // 分类过滤
-	Tags     []string `form:"tags" example:"hot,sweet"`                        // 标签过滤
-	Limit    int      `form:"limit" validate:"min=1,max=100" example:"10"`     // 结果数量
-	Offset   int      `form:"offset" validate:"min=0" example:"0"`             // 偏移量
+	Query    string   `form:"q" example:"latte"`                           // 搜索关键词
+	Fields   []string `form:"fields" example:"name,description"`           // 搜索字段
+	Category string   `form:"category" example:"coffee"`                   // 分类过滤
+	Tags     []string `form:"tags" example:"hot,sweet"`                    // 标签过滤
+	Limit    int      `form:"limit" validate:"min=1,max=100" example:"10"` // 结果数量
+	Offset   int      `form:"offset" validate:"min=0" example:"0"`         // 偏移量
 }
 
 // SearchResponse 搜索响应
@@ -161,16 +161,23 @@ const (
 	StatusInternalServerError = 500
 )
 
+// TokenClaims JWT Token Claims
+type TokenClaims struct {
+	MemberID       string `json:"member_id"`
+	MachineOwnerID string `json:"machine_owner_id,omitempty"`
+	Role           string `json:"role"`
+}
+
 // 常见的错误码常量
 const (
-	ErrorCodeValidation      = "VALIDATION_ERROR"
-	ErrorCodeNotFound        = "NOT_FOUND"
-	ErrorCodeUnauthorized    = "UNAUTHORIZED"
-	ErrorCodeForbidden       = "FORBIDDEN"
-	ErrorCodeConflict        = "CONFLICT"
-	ErrorCodeInternalServer  = "INTERNAL_SERVER_ERROR"
-	ErrorCodeDatabaseError   = "DATABASE_ERROR"
-	ErrorCodeInvalidToken    = "INVALID_TOKEN"
-	ErrorCodeTokenExpired    = "TOKEN_EXPIRED"
+	ErrorCodeValidation        = "VALIDATION_ERROR"
+	ErrorCodeNotFound          = "NOT_FOUND"
+	ErrorCodeUnauthorized      = "UNAUTHORIZED"
+	ErrorCodeForbidden         = "FORBIDDEN"
+	ErrorCodeConflict          = "CONFLICT"
+	ErrorCodeInternalServer    = "INTERNAL_SERVER_ERROR"
+	ErrorCodeDatabaseError     = "DATABASE_ERROR"
+	ErrorCodeInvalidToken      = "INVALID_TOKEN"
+	ErrorCodeTokenExpired      = "TOKEN_EXPIRED"
 	ErrorCodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
 )

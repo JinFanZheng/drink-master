@@ -199,23 +199,23 @@ drink-master/
 ### Product Agent场景
 ```bash
 # 创建产品需求Issue
-gh issue create --title "[Product] 用户饮品记录功能" --label "product,priority-high"
+gh issue create --title "[Product] 微信支付集成功能" --label "product,priority-high,payment,wechat"
 
-# 输出PRD文档
-# 文件: docs/PRD/drink-tracking.md
+# 输出PRD文档  
+# 文件: docs/PRD/smart-vending-machine-platform.md
 # 内容: 用户价值、业务目标、功能需求、验收标准
 ```
 
 ### PM Agent场景
 ```bash
 # 基于PRD创建Epic
-gh issue create --title "[Epic] 饮品管理系统MVP" --label "epic,backend"
+gh issue create --title "[Epic] 智能售货机平台核心功能" --label "epic,backend"
 
 # 拆解开发任务
 # - #XX 数据库模型设计
-# - #XX 用户认证API
-# - #XX 饮品CRUD功能
-# - #XX API文档生成
+# - #XX 微信登录API  
+# - #XX 售货机管理功能
+# - #XX 订单和支付API
 ```
 
 ### Dev Agent场景
@@ -223,12 +223,12 @@ gh issue create --title "[Epic] 饮品管理系统MVP" --label "epic,backend"
 # 标准开发流程
 git checkout main && git pull origin main
 gh issue view <issue-id>
-git checkout -b feat/<issue-id>-drink-api
+git checkout -b feat/<issue-id>-payment-api
 make lint && make test && make build
 
 # 提交和PR创建
-git commit -m "feat: implement drink CRUD API"
-gh pr create --title "feat: drink CRUD API" --body "Fixes #<issue-id>"
+git commit -m "feat: implement wechat payment API"
+gh pr create --title "feat: wechat payment API" --body "Fixes #<issue-id>"
 ```
 
 ## 🔍 常见问题

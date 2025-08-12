@@ -39,6 +39,31 @@
   color: "8c564b"
   description: "产品需求类Issue"
 
+# 业务模块标签
+- name: "member"
+  color: "1abc9c"
+  description: "会员管理相关"
+
+- name: "machine"
+  color: "e67e22"
+  description: "售货机管理相关"
+
+- name: "order"
+  color: "3498db"
+  description: "订单管理相关"
+
+- name: "payment"
+  color: "f39c12"
+  description: "支付相关"
+
+- name: "iot"
+  color: "34495e"
+  description: "设备通信和IoT相关"
+
+- name: "wechat"
+  color: "2ecc71"
+  description: "微信集成相关"
+
 # 状态标签
 - name: "in-progress"
   color: "0052cc"
@@ -142,3 +167,15 @@
 - name: "github-actions"
   color: "2088ff"
   description: "GitHub Actions相关"
+
+- name: "mqtt"
+  color: "660066"
+  description: "MQTT协议相关"
+
+- name: "jwt"
+  color: "000000"
+  description: "JWT认证相关"
+
+- name: "gorm"
+  color: "ff6b6b"
+  description: "GORM ORM相关"
