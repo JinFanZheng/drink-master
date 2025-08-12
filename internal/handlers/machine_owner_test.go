@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -51,7 +52,7 @@ func setupMachineOwnerTestData(t *testing.T, db *gorm.DB) (string, string, strin
 		MachineOwnerId: owner.ID,
 		MachineNo:      "VM001",
 		Name:           "Test Machine 1",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
 	}
 	require.NoError(t, db.Create(&machine1).Error)
 
@@ -60,7 +61,7 @@ func setupMachineOwnerTestData(t *testing.T, db *gorm.DB) (string, string, strin
 		MachineOwnerId: owner.ID,
 		MachineNo:      "VM002",
 		Name:           "Test Machine 2",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
 	}
 	require.NoError(t, db.Create(&machine2).Error)
 
