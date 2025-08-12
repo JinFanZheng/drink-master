@@ -76,44 +76,99 @@ gh pr create --title "..." --body "Fixes #<issue-id> ..."
 
 Required environment variables in `.env`:
 ```
+# Server Configuration
+GIN_MODE=debug
+PORT=8080
+HOST=localhost
+
+# Database Configuration
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=drink_master
+DB_USER=vending_machine
 DB_PASSWORD=your_password
-DB_NAME=drink_master_dev
-JWT_SECRET=your_jwt_secret
-GIN_MODE=debug
+DB_NAME=vending_machine_dev
+DB_NAME_TEST=vending_machine_test
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_change_this_in_production
+JWT_EXPIRES_HOURS=24
+
+# WeChat Configuration
+WECHAT_APP_ID=your_wechat_app_id
+WECHAT_APP_SECRET=your_wechat_app_secret
+
+# WeChat Pay Configuration
+WECHAT_PAY_MERCHANT_ID=your_merchant_id
+WECHAT_PAY_API_KEY=your_api_key
+WECHAT_PAY_NOTIFY_URL=https://yourdomain.com/api/callback/wechat
+
+# MQTT Device Communication
+MQTT_BROKER=tcp://localhost:1883
+MQTT_USERNAME=mqtt_user
+MQTT_PASSWORD=mqtt_password
+MQTT_CLIENT_ID=vending_machine_server
 ```
 
 Optional for development:
 ```
-MOCK_MODE=true  # Enable mock data responses
+MOCK_MODE=false  # Enable mock data responses
 LOG_LEVEL=debug # Set logging level
+REDIS_URL=redis://localhost:6379
+OPENTELEMETRY_ENDPOINT=http://localhost:4317
 ```
 
 ## Core Architecture
 
-This is a drink management system using Gin framework with the following structure:
+This is a smart vending machine platform using Gin framework with the following structure:
 
 ### API Layer (`internal/handlers/`)
-- `POST /api/drinks` - Create new drink records
-- `GET /api/drinks` - List drinks with filters
-- `PUT /api/drinks/:id` - Update drink information
-- `DELETE /api/drinks/:id` - Remove drink records
-- `GET /api/drinks/stats` - Get drink statistics
-- All APIs use MySQL for data persistence
+**Account Management:**
+- `POST /api/Account/WeChatLogin` - WeChat user login
+- `GET /api/Account/CheckLogin` - Check login status
+- `GET /api/Account/GetUserInfo` - Get user information
+- `GET /api/Account/CheckUserInfo` - Check user info by code
+
+**Member Management:**
+- `POST /api/Member/Update` - Update member information
+- `POST /api/Member/AddFranchiseIntention` - Add franchise intention
+
+**Machine Management:**
+- `POST /api/Machine/GetPaging` - Get paginated machine list
+- `GET /api/Machine/GetList` - Get machine list
+- `GET /api/Machine/Get` - Get machine details
+- `GET /api/Machine/GetProductList` - Get machine products
+- `GET /api/Machine/OpenOrClose` - Toggle business status
+
+**Order Management:**
+- `POST /api/Order/GetPaging` - Get paginated orders
+- `GET /api/Order/Get` - Get order details
+- `POST /api/Order/Create` - Create new order
+- `POST /api/Order/Refund` - Process refund
+
+**Payment:**
+- `GET /api/Payment/Get` - Get payment info
+- `GET /api/Payment/Query` - Query payment status
+- `POST /api/Callback/PaymentResult` - WeChat payment callback
+
+All APIs use MySQL for data persistence with WeChat integration.
 
 ### Contract-First Development (`internal/contracts/`)
 All API requests/responses are validated using Go structs:
-- `DrinkRequest` → `DrinkResponse`
-- `StatsRequest` → `StatsResponse`
+- `AccountRequest` → `AccountResponse` (Login/Auth)
+- `MemberRequest` → `MemberResponse` (Member management)
+- `MachineRequest` → `MachineResponse` (Machine operations)
+- `OrderRequest` → `OrderResponse` (Order processing)
+- `PaymentRequest` → `PaymentResponse` (Payment processing)
 - Breaking changes to contracts require PR and README changelog update
 
 ### Key Processing Pipeline
-1. **Request Validation**: Gin middleware validates incoming requests
-2. **Business Logic**: Service layer processes business rules
-3. **Data Persistence**: Repository layer handles database operations
-4. **Response Formation**: Structured JSON responses with error handling
+1. **Authentication**: JWT middleware for protected routes
+2. **WeChat Integration**: WeChat login and payment processing
+3. **Request Validation**: Gin middleware validates incoming requests
+4. **Business Logic**: Service layer processes vending machine operations
+5. **MQTT Communication**: Real-time device communication
+6. **Data Persistence**: Repository layer handles database operations
+7. **Response Formation**: Structured JSON responses with error handling
 
 ## Testing and Development
 
@@ -197,11 +252,14 @@ func HandleError(c *gin.Context, err error, code int) {
 ## Component Structure
 
 - `cmd/server/` - Main application entry point
-- `internal/handlers/` - HTTP request handlers
-- `internal/services/` - Business logic layer
+- `internal/handlers/` - HTTP request handlers (Account, Member, Machine, Order, Payment)
+- `internal/services/` - Business logic layer (JWT, Cache, Device communication)
 - `internal/repositories/` - Database access layer
-- `internal/models/` - Data models and entities
-- `internal/middleware/` - Gin middleware components
+- `internal/models/` - Data models and entities (Member, Machine, Order, Product)
+- `internal/contracts/` - API contract definitions
+- `internal/middleware/` - Gin middleware components (Auth, CORS, Logger)
+- `internal/config/` - Configuration management (Database, WeChat)
+- `pkg/wechat/` - WeChat SDK integration
 
 ## Mock Development
 
@@ -281,9 +339,12 @@ docs/
 
 ### Technology Stack
 - **Database**: MySQL 8.0+
-- **Migration Tool**: golang-migrate
-- **ORM**: GORM (recommended) or database/sql
-- **Core tables**: users, drinks, drink_categories, consumption_logs
+- **Migration Tool**: GORM Auto Migration
+- **ORM**: GORM
+- **Authentication**: JWT + WeChat Login
+- **Payment**: WeChat Pay API
+- **Device Communication**: MQTT Protocol
+- **Core tables**: members, machines, machine_owners, products, machine_products, orders, franchise_intentions
 
 ### Development Commands
 - **Database Migration**: `make db-migrate` (apply pending migrations)
@@ -296,12 +357,12 @@ docs/
 # Development (.env)
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=drink_master
+DB_USER=vending_machine
 DB_PASSWORD=password
-DB_NAME=drink_master_dev
+DB_NAME=vending_machine_dev
 
 # Test (.env.test)
-DB_NAME=drink_master_test
+DB_NAME=vending_machine_test
 ```
 
 ## Deployment Configuration
@@ -425,4 +486,4 @@ gh pr create --title "feat: description" --body "Fixes #<issue-id>"
 
 **Follow the Agent Collaboration Framework for efficient teamwork!** 🤝
 
-*CLAUDE.md last updated: 2025-08-11*
+*CLAUDE.md last updated: 2025-08-12*

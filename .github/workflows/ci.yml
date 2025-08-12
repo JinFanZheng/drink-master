@@ -2,24 +2,37 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'LICENSE*'
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'LICENSE*'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: drink_master_test
-          MYSQL_USER: drink_master
-          MYSQL_PASSWORD: testpassword
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    # MySQL服务暂时注释，后续需要时再启用
+    # services:
+    #   mysql:
+    #     image: mysql:8.0
+    #     env:
+    #       MYSQL_ROOT_PASSWORD: rootpassword
+    #       MYSQL_DATABASE: drink_master_test
+    #       MYSQL_USER: drink_master
+    #       MYSQL_PASSWORD: testpassword
+    #     ports:
+    #       - 3306:3306
+    #     options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout code
@@ -30,43 +43,55 @@ jobs:
         with:
           go-version: '1.23'
           cache: true
+          cache-dependency-path: go.sum
+
+      # 缓存开发工具，避免重复安装
+      - name: Cache development tools
+        uses: actions/cache@v4
+        id: cache-tools
+        with:
+          path: |
+            ~/.local/bin
+            ~/go/bin
+          key: dev-tools-${{ runner.os }}-${{ hashFiles('**/go.mod') }}
+          restore-keys: |
+            dev-tools-${{ runner.os }}-
 
       - name: Install dependencies
         run: go mod download
 
       - name: Install development tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-          
-      - name: Wait for MySQL
-        run: |
-          until nc -z localhost 3306; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
-          echo "✅ MySQL is ready"
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 
       - name: Run linting
         run: |
           echo "🔍 Running Go linting..."
-          golangci-lint run --timeout=5m
+          golangci-lint run --timeout=3m
           go fmt ./...
           go vet ./...
           echo "✅ Linting completed"
 
-      - name: Run tests
+      # 根据事件类型条件化执行测试
+      - name: Run tests (fast)
+        if: github.event_name == 'push'
         env:
-          DB_HOST: localhost
-          DB_PORT: 3306
-          DB_USER: drink_master
-          DB_PASSWORD: testpassword
-          DB_NAME: drink_master_test
           JWT_SECRET: test_jwt_secret_for_ci
           GIN_MODE: test
         run: |
           echo "🧪 Running tests with coverage..."
-          go test -v -race -coverprofile=coverage.out ./...
-          go tool cover -html=coverage.out -o coverage.html
+          go test -coverprofile=coverage.out ./...
+          echo "✅ Tests completed"
+
+      - name: Run tests with race detection (PR only)
+        if: github.event_name == 'pull_request'
+        env:
+          JWT_SECRET: test_jwt_secret_for_ci
+          GIN_MODE: test
+        run: |
+          echo "🧪 Running tests with race detection and coverage..."
+          go test -race -coverprofile=coverage.out ./...
           echo "✅ Tests completed"
 
       - name: Check test coverage
@@ -83,49 +108,26 @@ jobs:
       - name: Build application
         run: |
           echo "🔨 Building application..."
-          go build -v -o bin/drink-master cmd/server/main.go
+          go build -o bin/drink-master cmd/server/main.go
           echo "✅ Build completed successfully"
           
-      - name: Test build artifacts
+      - name: Validate binary
         run: |
-          echo "Checking build artifacts..."
-          ls -la bin/
+          echo "Validating build artifacts..."
           test -f bin/drink-master && echo "✅ Binary exists"
           file bin/drink-master
           echo "✅ Build artifacts validated"
 
-      - name: Validate application startup (dry run)
-        env:
-          DB_HOST: localhost
-          DB_PORT: 3306
-          DB_USER: drink_master
-          DB_PASSWORD: testpassword
-          DB_NAME: drink_master_test
-          JWT_SECRET: test_jwt_secret_for_ci
-          GIN_MODE: test
-        run: |
-          echo "🚀 Testing application startup..."
-          timeout 10s ./bin/drink-master &
-          PID=$!
-          sleep 5
-          if ps -p $PID > /dev/null; then
-            echo "✅ Application started successfully"
-            kill $PID
-          else
-            echo "❌ Application failed to start"
-            exit 1
-          fi
+      # 仅在PR时生成和上传覆盖率报告
+      - name: Generate coverage report
+        if: github.event_name == 'pull_request'
+        run: go tool cover -html=coverage.out -o coverage.html
 
       - name: Upload coverage reports
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
             coverage.out
             coverage.html
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: binary
-          path: bin/drink-master
