@@ -1,0 +1,259 @@
+package services
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/models"
+	"github.com/ddteam/drink-master/internal/repositories"
+)
+
+// OrderService 订单服务接口
+type OrderService interface {
+	GetMemberOrderPaging(request contracts.GetMemberOrderPagingRequest) (*contracts.OrderPagingResponse, error)
+	GetByID(id string) (*contracts.GetOrderByIdResponse, error)
+	Create(request contracts.CreateOrderRequest) (*contracts.CreateOrderResponse, error)
+	Refund(request contracts.RefundOrderRequest) (*contracts.RefundOrderResponse, error)
+}
+
+// orderService 订单服务实现
+type orderService struct {
+	orderRepo   repositories.OrderRepository
+	machineRepo repositories.MachineRepositoryInterface
+	memberRepo  *repositories.MemberRepository
+	deviceSvc   DeviceServiceInterface
+}
+
+// NewOrderService 创建订单服务
+func NewOrderService(
+	orderRepo repositories.OrderRepository,
+	machineRepo repositories.MachineRepositoryInterface,
+	memberRepo *repositories.MemberRepository,
+	deviceSvc DeviceServiceInterface,
+) OrderService {
+	return &orderService{
+		orderRepo:   orderRepo,
+		machineRepo: machineRepo,
+		memberRepo:  memberRepo,
+		deviceSvc:   deviceSvc,
+	}
+}
+
+// GetMemberOrderPaging 分页获取会员订单列表
+func (s *orderService) GetMemberOrderPaging(
+	request contracts.GetMemberOrderPagingRequest,
+) (*contracts.OrderPagingResponse, error) {
+	// 验证会员是否存在
+	_, err := s.memberRepo.GetByID(request.MemberID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("会员不存在")
+		}
+		return nil, fmt.Errorf("查询会员信息失败: %w", err)
+	}
+
+	// 获取订单列表
+	orders, total, err := s.orderRepo.GetByMemberPaging(request.MemberID, request.PageIndex, request.PageSize)
+	if err != nil {
+		return nil, fmt.Errorf("获取订单列表失败: %w", err)
+	}
+
+	// 转换为响应格式
+	orderResponses := make([]contracts.GetMemberOrderPagingResponse, len(orders))
+	for i, order := range orders {
+		productName := ""
+		if order.Product != nil {
+			productName = order.Product.Name
+		}
+
+		orderResponses[i] = contracts.GetMemberOrderPagingResponse{
+			ID:            order.ID,
+			OrderNo:       order.OrderNo,
+			ProductName:   productName,
+			PayAmount:     decimal.NewFromFloat(order.PayAmount),
+			CreatedAt:     order.CreatedAt,
+			PaymentStatus: order.PaymentStatus,
+		}
+	}
+
+	// 计算分页信息
+	totalPages := int(total) / request.PageSize
+	if int(total)%request.PageSize > 0 {
+		totalPages++
+	}
+
+	meta := contracts.PaginationMeta{
+		Total:       total,
+		Count:       len(orderResponses),
+		PerPage:     request.PageSize,
+		CurrentPage: request.PageIndex,
+		TotalPages:  totalPages,
+		HasNext:     request.PageIndex < totalPages,
+		HasPrev:     request.PageIndex > 1,
+		Meta: &contracts.Meta{
+			Timestamp: time.Now(),
+			Version:   "v1.0.0",
+		},
+	}
+
+	return &contracts.OrderPagingResponse{
+		Orders: orderResponses,
+		Meta:   meta,
+	}, nil
+}
+
+// GetByID 根据ID获取订单详情
+func (s *orderService) GetByID(id string) (*contracts.GetOrderByIdResponse, error) {
+	order, err := s.orderRepo.GetByID(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("订单不存在")
+		}
+		return nil, fmt.Errorf("获取订单详情失败: %w", err)
+	}
+
+	// 构建响应
+	response := &contracts.GetOrderByIdResponse{
+		ID:            order.ID,
+		OrderNo:       order.OrderNo,
+		MachineID:     order.MachineId,
+		ProductID:     order.ProductId,
+		PayAmount:     decimal.NewFromFloat(order.PayAmount),
+		PaymentStatus: order.PaymentStatus,
+		MakeStatus:    order.MakeStatus,
+		CreatedAt:     order.CreatedAt,
+		PaymentTime:   order.PaymentTime,
+		HasCup:        order.HasCup,
+		RefundAmount:  decimal.NewFromFloat(order.RefundAmount),
+		RefundReason:  order.RefundReason,
+	}
+
+	// 设置机器名称
+	if order.Machine != nil {
+		response.MachineName = order.Machine.Name
+	}
+
+	// 设置产品名称
+	if order.Product != nil {
+		response.ProductName = order.Product.Name
+	}
+
+	return response, nil
+}
+
+// Create 创建订单
+func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.CreateOrderResponse, error) {
+	// 验证会员是否存在
+	_, err := s.memberRepo.GetByID(request.MemberID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("会员不存在")
+		}
+		return nil, fmt.Errorf("查询会员信息失败: %w", err)
+	}
+
+	// 验证机器是否存在
+	machine, err := s.machineRepo.GetByID(request.MachineID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("机器不存在")
+		}
+		return nil, fmt.Errorf("查询机器信息失败: %w", err)
+	}
+
+	// 检查设备是否在线
+	deviceId := ""
+	if machine.DeviceId != nil {
+		deviceId = *machine.DeviceId
+	}
+	online, err := s.deviceSvc.CheckDeviceOnline(deviceId)
+	if err != nil {
+		return nil, fmt.Errorf("检查设备状态失败: %w", err)
+	}
+	if !online {
+		return nil, fmt.Errorf("机器不在线，下单失败")
+	}
+
+	// 生成订单号
+	orderNo := s.generateOrderNo()
+
+	// 创建订单
+	order := &models.Order{
+		ID:            uuid.New().String(),
+		MemberId:      request.MemberID,
+		MachineId:     request.MachineID,
+		ProductId:     request.ProductID,
+		OrderNo:       orderNo,
+		HasCup:        request.HasCup,
+		TotalAmount:   request.PayAmount.InexactFloat64(),
+		PayAmount:     request.PayAmount.InexactFloat64(),
+		PaymentStatus: contracts.PaymentStatusWaitPay,
+		MakeStatus:    contracts.MakeStatusWaitMake,
+		RefundAmount:  0,
+	}
+
+	err = s.orderRepo.Create(order)
+	if err != nil {
+		return nil, fmt.Errorf("创建订单失败: %w", err)
+	}
+
+	return &contracts.CreateOrderResponse{
+		OrderID: order.ID,
+		OrderNo: order.OrderNo,
+		Message: "订单创建成功",
+	}, nil
+}
+
+// Refund 退款订单
+func (s *orderService) Refund(request contracts.RefundOrderRequest) (*contracts.RefundOrderResponse, error) {
+	// 获取订单信息
+	order, err := s.orderRepo.GetByID(request.OrderID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("订单不存在")
+		}
+		return nil, fmt.Errorf("获取订单信息失败: %w", err)
+	}
+
+	// 检查订单状态
+	if order.PaymentStatus != contracts.PaymentStatusPaid {
+		return nil, fmt.Errorf("订单状态不允许退款")
+	}
+
+	if order.PaymentStatus == contracts.PaymentStatusRefunded {
+		return nil, fmt.Errorf("订单已经退款")
+	}
+
+	// 只有机主可以退款
+	if !request.IsMachineOwner {
+		return nil, fmt.Errorf("您不是机主，无法退款")
+	}
+
+	// 更新订单状态
+	now := time.Now()
+	order.PaymentStatus = contracts.PaymentStatusRefunded
+	order.RefundTime = &now
+	order.RefundAmount = order.PayAmount
+	order.RefundReason = &request.Reason
+
+	err = s.orderRepo.Update(order)
+	if err != nil {
+		return nil, fmt.Errorf("更新订单状态失败: %w", err)
+	}
+
+	return &contracts.RefundOrderResponse{
+		OrderID:      order.ID,
+		RefundAmount: decimal.NewFromFloat(order.RefundAmount),
+		Message:      "退款成功",
+	}, nil
+}
+
+// generateOrderNo 生成订单号
+func (s *orderService) generateOrderNo() string {
+	return fmt.Sprintf("ORD%s", time.Now().Format("20060102150405"))
+}

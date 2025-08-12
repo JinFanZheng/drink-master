@@ -7,6 +7,8 @@ import (
 	"github.com/ddteam/drink-master/internal/config"
 	"github.com/ddteam/drink-master/internal/handlers"
 	"github.com/ddteam/drink-master/internal/middleware"
+	"github.com/ddteam/drink-master/internal/repositories"
+	"github.com/ddteam/drink-master/internal/services"
 	"github.com/ddteam/drink-master/pkg/wechat"
 )
 
@@ -66,7 +68,13 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	}
 
 	// 基于OrderController的路由
-	orderHandler := handlers.NewOrderHandler(db)
+	// 初始化订单服务所需的依赖
+	orderRepo := repositories.NewOrderRepository(db)
+	machineRepo := repositories.NewMachineRepository(db)
+	memberRepo := repositories.NewMemberRepository(db)
+	deviceSvc := services.NewDeviceService()
+	orderService := services.NewOrderService(orderRepo, machineRepo, memberRepo, deviceSvc)
+	orderHandler := handlers.NewOrderHandler(db, orderService)
 	order := router.Group("/api/Order")
 	order.Use(middleware.JWTAuth()) // 所有Order接口都需要认证
 	{
