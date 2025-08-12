@@ -48,6 +48,15 @@ gh pr view <pr-number> --json mergeable
 # 3. Issue关联检查
 gh pr view <pr-number> --json body | jq -r '.body' | grep -E '(Fixes|Closes) #[0-9]+'
 # 确保有正确的Issue链接
+
+# 4. 代码质量门槛检查
+gh pr checks <pr-number> | grep -E '(lint|test|coverage)'
+# 确保以下检查通过：
+# - golangci-lint 代码质量检查
+# - 所有单元测试通过
+# - 测试覆盖率 ≥78%
+# - 循环复杂度 ≤15 (gocyclo)
+# - 代码格式检查 (gofmt)
 ```
 
 ### 功能完整性验证
@@ -136,8 +145,14 @@ gh pr merge <pr-number> --merge --delete-branch
 ```bash
 # 1. 运行完整的质量检查
 make lint && make test && make build
+# 注意：确保测试覆盖率达到78%以上
 
-# 2. 功能回归测试
+# 2. 代码复杂度检查
+golangci-lint run --timeout=5m
+# 重点检查循环复杂度是否超过15
+# 如发现复杂度过高，建议重构为多个小函数
+
+# 3. 功能回归测试
 make health-check  # 健康状态检查
 make test-api      # API功能测试
 
@@ -168,6 +183,9 @@ fi
 
 **合并条件：**
 - `make lint && make test && make build` 全部通过
+- **测试覆盖率 ≥78%** (CI自动检查)
+- **代码复杂度合规** (单个函数循环复杂度 ≤15)
+- **代码格式规范** (通过gofmt和golangci-lint检查)
 - 核心API功能测试通过（/api/health, /api/drinks/*）
 - 变更行数 < 500行 或 新增功能完整且独立
 - 无API breaking changes
@@ -376,6 +394,24 @@ if ! make lint > /dev/null 2>&1; then
   exit 1
 fi
 
+# 4.1 检查测试覆盖率
+echo "4.1️⃣ 检查测试覆盖率..."
+COVERAGE=$(go test -coverprofile=coverage.out ./... > /dev/null 2>&1 && go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+if (( $(echo "$COVERAGE < 78" | bc -l) )); then
+  echo "❌ 测试覆盖率不足: ${COVERAGE}% (要求≥78%)"
+  exit 1
+fi
+echo "✅ 测试覆盖率: ${COVERAGE}%"
+
+# 4.2 检查循环复杂度
+echo "4.2️⃣ 检查循环复杂度..."
+if golangci-lint run --disable-all --enable=gocyclo > /dev/null 2>&1; then
+  echo "✅ 循环复杂度检查通过"
+else
+  echo "❌ 发现循环复杂度过高的函数，请重构"
+  exit 1
+fi
+
 # 5. 功能验证
 echo "5️⃣ 运行功能测试..."
 if ! make health-check > /dev/null 2>&1; then
@@ -419,18 +455,88 @@ echo "✅ PR #$PR_NUMBER 验证通过，风险等级: $RISK_LEVEL"
 echo "可以安全合并"
 ```
 
-## 9. 最佳实践
+## 9. 测试质量专项检查
+
+基于项目的测试覆盖率和代码质量要求，以下检查是必须的：
+
+### 测试覆盖率检查
+```bash
+# 检查当前覆盖率
+COVERAGE=$(go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+echo "当前测试覆盖率: ${COVERAGE}%"
+
+# 验证是否达到最低要求
+if (( $(echo "$COVERAGE < 78" | bc -l) )); then
+  echo "❌ 测试覆盖率不足: ${COVERAGE}% (要求≥78%)"
+  echo "请添加更多测试用例或联系团队调整阈值"
+  exit 1
+else
+  echo "✅ 测试覆盖率符合要求: ${COVERAGE}%"
+fi
+```
+
+### 代码复杂度检查
+```bash
+# 检查循环复杂度 (gocyclo)
+# 限制: 单个函数复杂度不能超过15
+echo "检查循环复杂度..."
+if golangci-lint run --disable-all --enable=gocyclo; then
+  echo "✅ 循环复杂度检查通过"
+else
+  echo "❌ 发现复杂度过高的函数"
+  echo "解决方案：将大函数拆分为多个小函数，或使用table-driven tests"
+  exit 1
+fi
+```
+
+### Pre-commit Hook检查
+```bash
+# 验证是否设置pre-commit hooks
+if [ -f ".githooks/pre-commit" ] && [ -x ".githooks/pre-commit" ]; then
+  echo "✅ Pre-commit hook已设置"
+  # 检查Git hooks路径配置
+  HOOKS_PATH=$(git config core.hooksPath)
+  if [ "$HOOKS_PATH" = ".githooks" ]; then
+    echo "✅ Git hooks路径配置正确"
+  else
+    echo "⚠️ 建议设置: git config core.hooksPath .githooks"
+  fi
+else
+  echo "⚠️ 未检测到pre-commit hook，建议使用项目提供的.githooks/pre-commit"
+fi
+```
+
+### 测试类型覆盖检查
+```bash
+# 检查各模块的测试覆盖情况
+go test -coverprofile=coverage.out ./...
+echo "各模块覆盖率详情："
+go tool cover -func=coverage.out | grep -E "(internal/handlers|internal/services|internal/repositories|pkg/)"
+
+# 重点关注低覆盖率模块
+LOW_COVERAGE=$(go tool cover -func=coverage.out | awk '$3 ~ /%/ && $3 < "70.0%" {print $1 ": " $3}' | head -5)
+if [ ! -z "$LOW_COVERAGE" ]; then
+  echo "⚠️ 以下模块覆盖率较低（<70%）："
+  echo "$LOW_COVERAGE"
+  echo "请在后续开发中优先补充这些模块的测试"
+fi
+```
+
+## 10. 最佳实践
 
 1. **使用验证脚本**: 运行上述脚本进行全面检查
 2. **遵循现有工具链**: 优先使用项目的 `make` 命令而不是直接的go命令  
-3. **批量处理**: 使用脚本批量检查多个PR状态
-4. **定期清理**: 定期检查长时间未更新的PR
-5. **监控部署**: 合并后关注部署状态和错误日志
-6. **文档更新**: 重要变更及时更新相关文档
-7. **团队协作**: 重要决策及时在团队群组通知
-8. **Mock优先**: 利用项目的Mock模式进行快速验证
+3. **Pre-commit检查**: 确保本地开发环境使用pre-commit hooks
+4. **测试覆盖率监控**: 定期检查各模块覆盖率，优先补充低覆盖模块
+5. **代码复杂度控制**: 及时重构过于复杂的函数，保持代码可读性
+6. **批量处理**: 使用脚本批量检查多个PR状态
+7. **定期清理**: 定期检查长时间未更新的PR
+8. **监控部署**: 合并后关注部署状态和错误日志
+9. **文档更新**: 重要变更及时更新相关文档
+10. **团队协作**: 重要决策及时在团队群组通知
+11. **Mock优先**: 利用项目的Mock模式进行快速验证
 
-## 9. 应急联系
+## 11. 应急联系
 
 如果遇到无法自动处理的复杂情况：
 1. 在相关Issue或PR中 @mention 项目负责人
