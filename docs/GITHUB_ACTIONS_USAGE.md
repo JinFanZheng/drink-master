@@ -1,6 +1,6 @@
 # GitHub Actions 工作流使用指南
 
-本项目包含3个GitHub Actions工作流，各有不同职责，避免重复执行。
+本项目包含2个GitHub Actions工作流，各有不同职责，避免重复执行。
 
 ## 🚀 工作流概览
 
@@ -16,9 +16,9 @@
 **运行时间:** 每次PR/push都会运行，是其他工作流的基础
 
 ### 2. Auto PR Review & Merge (`auto-pr-review.yml`) - 智能合并
-**触发条件:** PR状态变更 + CI工作流完成  
+**触发条件:** PR状态变更 + 手动触发  
 **职责:**
-- 🔍 等待CI完成并检查结果
+- 🔍 检查CI状态和合并条件
 - 📊 PR风险等级评估 (低/中/高)
 - 🤖 基于风险等级的自动化决策
 - ✅ 符合条件的PR自动合并
@@ -26,45 +26,25 @@
 
 **依赖关系:** 依赖CI工作流的成功完成
 
-### 3. GitHub Copilot Integration (`copilot-integration.yml`) - 智能助手
-**触发条件:** PR创建/更新 + 特定评论命令  
-**职责:**
-- 🤖 自动代码审查和建议
-- 💬 响应 `@copilot review` 命令
-- 💡 响应 `@copilot suggest <需求>` 命令
-- 📝 生成智能代码建议
-
-**独立运行:** 不依赖其他工作流
-
 ## 📋 使用方式
 
 ### 自动触发场景
 
 1. **创建PR时**
    ```
-   PR创建 → CI运行 → Auto Review等待CI → (成功后)风险评估 → 自动合并决策
-                ↘ Copilot Review生成智能审查报告
+   PR创建 → CI运行 → (可选)手动触发Auto Review → 风险评估 → 自动合并决策
    ```
 
 2. **更新PR时**
    ```
-   代码推送 → CI重新运行 → Auto Review重新评估 → 更新合并决策
+   代码推送 → CI重新运行 → (可选)重新触发Auto Review → 更新合并决策
    ```
 
 ### 手动触发功能
 
-在PR中评论以下命令：
-
-1. **请求Copilot审查**
-   ```
-   @copilot review
-   ```
-   
-2. **请求代码建议**
-   ```
-   @copilot suggest test           # 测试代码建议
-   @copilot suggest error handling # 错误处理建议  
-   @copilot suggest optimize       # 性能优化建议
+1. **手动触发Auto Review**
+   ```bash
+   gh workflow run "Auto PR Review & Merge" --field pr_number=<PR号>
    ```
 
 ## 🎯 自动合并规则
@@ -93,7 +73,6 @@ gh workflow list
 # 查看特定工作流运行情况  
 gh run list --workflow="CI"
 gh run list --workflow="Auto PR Review & Merge"
-gh run list --workflow="GitHub Copilot Integration"
 
 # 查看特定运行的详情
 gh run view <run-id>
