@@ -91,8 +91,8 @@ jobs:
           
           # 检查可合并状态
           MERGEABLE=$(gh pr view $PR_NUMBER --json mergeable -q .mergeable)
-          if [ "$MERGEABLE" != "true" ]; then
-            echo "❌ PR存在合并冲突"
+          if [ "$MERGEABLE" != "MERGEABLE" ]; then
+            echo "❌ PR存在合并冲突或状态异常: $MERGEABLE"
             echo "mergeable=false" >> $GITHUB_OUTPUT
             exit 1
           fi
@@ -117,23 +117,24 @@ jobs:
         run: |
           echo "🔍 检查CI状态..."
           
-          # 等待CI完成并检查状态
-          echo "等待CI工作流完成..."
-          timeout 300s bash -c '
-            while true; do
-              CI_STATUS=$(gh pr checks $PR_NUMBER --json state,conclusion | jq -r ".[] | select(.name==\"CI\") | .conclusion")
-              if [ "$CI_STATUS" = "success" ]; then
-                echo "✅ CI检查通过"
-                break
-              elif [ "$CI_STATUS" = "failure" ] || [ "$CI_STATUS" = "cancelled" ]; then
-                echo "❌ CI检查失败: $CI_STATUS"
-                exit 1
-              else
-                echo "⏳ CI正在运行，等待中..."
-                sleep 10
-              fi
-            done
-          '
+          # 检查CI状态
+          echo "检查CI工作流状态..."
+          CI_CHECKS=$(gh pr checks $PR_NUMBER --json name,state)
+          
+          # 检查关键的CI检查是否通过
+          TEST_STATUS=$(echo "$CI_CHECKS" | jq -r '.[] | select(.name=="test") | .state')
+          if [ "$TEST_STATUS" != "SUCCESS" ]; then
+            echo "❌ 测试检查状态: $TEST_STATUS"
+            echo "请等待CI完成后再次尝试"
+            exit 1
+          fi
+          
+          # 检查安全扫描
+          SECURITY_STATUS=$(echo "$CI_CHECKS" | jq -r '.[] | select(.name=="security-scan") | .state // "NOTFOUND"')
+          if [ "$SECURITY_STATUS" != "SUCCESS" ] && [ "$SECURITY_STATUS" != "NOTFOUND" ]; then
+            echo "❌ 安全扫描状态: $SECURITY_STATUS"  
+            exit 1
+          fi
           
           echo "✅ 所有质量检查已通过"
 
