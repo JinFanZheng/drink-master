@@ -1,98 +1,225 @@
-name: Issue automation (claim/status -> project sync)
+name: Issue Automation
 
 on:
   issues:
-    types: [opened, labeled, unlabeled, closed]
+    types: [opened, labeled, unlabeled, closed, reopened]
   issue_comment:
     types: [created]
 
 jobs:
-  sync-to-project:
+  issue-triage:
     if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - name: Auto-label new issues
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v7
         with:
           script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const issueNumber = context.payload.issue.number;
-            const labelNames = (context.payload.issue.labels || []).map(l => l.name);
-            const statusFromEvent = () => {
-              if (context.payload.action === 'opened') return 'Todo';
-              if (context.payload.action === 'labeled') {
-                if (context.payload.label.name === 'in-progress') return 'In progress';
-                if (context.payload.label.name === 'blocked') return 'Blocked';
-                if (context.payload.label.name === 'review') return 'Review';
+            console.log('🏷️  Auto-labeling new issue...');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const title = context.payload.issue.title.toLowerCase();
+            const body = (context.payload.issue.body || '').toLowerCase();
+            
+            const labels = [];
+            
+            // Auto-assign priority based on keywords
+            if (title.includes('urgent') || title.includes('critical') || body.includes('urgent')) {
+              labels.push('priority-high');
+            } else if (title.includes('important') || body.includes('important')) {
+              labels.push('priority-medium');
+            } else {
+              labels.push('priority-low');
+            }
+            
+            // Auto-assign type based on keywords
+            if (title.includes('bug') || title.includes('error') || title.includes('fix')) {
+              labels.push('bug');
+            } else if (title.includes('feature') || title.includes('enhancement')) {
+              labels.push('enhancement');
+            } else if (title.includes('doc') || title.includes('documentation')) {
+              labels.push('documentation');
+            } else if (title.includes('api') || body.includes('api')) {
+              labels.push('api');
+            } else if (title.includes('backend') || body.includes('backend')) {
+              labels.push('backend');
+            }
+            
+            if (labels.length > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number,
+                  labels
+                });
+                console.log(`✅ Added labels: ${labels.join(', ')}`);
+              } catch (error) {
+                console.error('❌ Failed to add labels:', error.message);
               }
-              if (context.payload.action === 'unlabeled') {
-                if (context.payload.label.name === 'review') return 'In progress';
-              }
-              if (context.payload.action === 'closed') return 'Done';
-              return null;
-            };
-            const desiredStatus = statusFromEvent();
-
-            // Fetch project and Status field
-            const projectNumber = 1; // 项目看板编号，需要根据实际情况调整
-            const projectOwner = 'ddteam'; // 组织或用户名，需要根据实际情况调整
-            const proj = await github.graphql(`
-              query($login:String!, $number:Int!) {
-                user(login:$login){
-                  projectV2(number:$number){ id, fields(first:50){ nodes { __typename id ... on ProjectV2SingleSelectField { name options{ id name } } } }
-                }
-              }`, { login: projectOwner, number: projectNumber });
-            const project = proj.user.projectV2;
-            if (!project) return core.setFailed('Project not found');
-            const statusField = project.fields.nodes.find(n => n.__typename==='ProjectV2SingleSelectField' && n.name==='Status');
-
-            // Get issue node id
-            const issueData = await github.graphql(`
-              query($owner:String!, $repo:String!, $number:Int!) {
-                repository(owner:$owner, name:$repo){ issue(number:$number){ id projectItems(first:50){ nodes { id project{ id } } } }
-                }
-              }`, { owner, repo, number: issueNumber });
-            const issue = issueData.repository.issue;
-            const issueId = issue.id;
-
-            // Ensure item exists in project
-            const inProject = issue.projectItems.nodes.find(n => n.project.id === project.id);
-            let itemId = inProject?.id;
-            if (!itemId) {
-              const addRes = await github.graphql(`
-                mutation($projectId:ID!, $contentId:ID!){ addProjectV2ItemById(input:{projectId:$projectId, contentId:$contentId}){ item{ id } } }
-              `, { projectId: project.id, contentId: issueId });
-              itemId = addRes.addProjectV2ItemById.item.id;
             }
 
-            // Set Status if needed
-            if (desiredStatus && statusField) {
-              const opt = statusField.options.find(o => o.name === desiredStatus);
-              if (opt) {
-                await github.graphql(`
-                  mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:String!) {
-                    updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId }}){ projectV2Item { id } }
-                  }
-                `, { projectId: project.id, itemId, fieldId: statusField.id, optionId: opt.id });
-              }
+      - name: Welcome new contributors
+        if: github.event.action == 'opened' && github.event.issue.author_association == 'FIRST_TIME_CONTRIBUTOR'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('👋 Welcoming new contributor...');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            
+            const welcomeMessage = `
+            👋 欢迎来到 drink-master 项目！感谢您提交第一个 Issue。
+
+            为了帮助我们更好地处理您的请求，请确保：
+            - 📋 提供清晰的问题描述或功能需求
+            - 🔍 如果是 bug，请提供复现步骤
+            - 🎯 如果是新功能，请说明使用场景
+
+            我们会尽快查看并回复您的 Issue。如果您想要参与开发，可以查看：
+            - 📚 [开发指南](docs/AGENT_ONBOARDING.md)
+            - 🤝 [协作指南](docs/ROLES_COLLABORATION.md)
+            `;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: welcomeMessage.trim()
+              });
+              console.log('✅ Welcome comment posted');
+            } catch (error) {
+              console.error('❌ Failed to post welcome comment:', error.message);
             }
-  claim:
+  issue-commands:
     if: github.event_name == 'issue_comment'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - name: Handle issue commands
+        uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.comment.body || '';
-            if (!/^\/claim\b/.test(body)) return;
+            const body = (context.payload.comment.body || '').trim();
             const { owner, repo } = context.repo;
             const issue_number = context.payload.issue.number;
             const actor = context.actor;
-            // Assign commenter
-            await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [actor] });
-            // Add in-progress label
-            try {
-              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['in-progress'] });
-            } catch (e) {
-              core.warning('Failed to add in-progress label: ' + e.message);
+            
+            console.log(`Processing command: ${body}`);
+            
+            // Handle /claim command
+            if (/^\/claim\b/.test(body)) {
+              console.log('🎯 Processing /claim command...');
+              try {
+                // Assign commenter to the issue
+                await github.rest.issues.addAssignees({ 
+                  owner, 
+                  repo, 
+                  issue_number, 
+                  assignees: [actor] 
+                });
+                
+                // Add in-progress label
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number, 
+                  labels: ['in-progress'] 
+                });
+                
+                // Add confirmation comment
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body: `✅ Issue claimed by @${actor}. Status updated to **in-progress**.`
+                });
+                
+                console.log(`✅ Issue #${issue_number} claimed by ${actor}`);
+              } catch (error) {
+                console.error('❌ Failed to process /claim command:', error.message);
+                
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body: `❌ Failed to claim issue: ${error.message}`
+                });
+              }
+              return;
             }
+            
+            // Handle /unclaim command
+            if (/^\/unclaim\b/.test(body)) {
+              console.log('🔄 Processing /unclaim command...');
+              try {
+                // Remove assignee
+                await github.rest.issues.removeAssignees({ 
+                  owner, 
+                  repo, 
+                  issue_number, 
+                  assignees: [actor] 
+                });
+                
+                // Remove in-progress label
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number, 
+                    name: 'in-progress'
+                  });
+                } catch (e) {
+                  // Label might not exist, which is fine
+                  console.log('Label "in-progress" not found, skipping removal');
+                }
+                
+                // Add confirmation comment
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body: `🔄 Issue unclaimed by @${actor}. Available for others to claim.`
+                });
+                
+                console.log(`✅ Issue #${issue_number} unclaimed by ${actor}`);
+              } catch (error) {
+                console.error('❌ Failed to process /unclaim command:', error.message);
+              }
+              return;
+            }
+            
+            // Handle /help command
+            if (/^\/help\b/.test(body)) {
+              console.log('❓ Processing /help command...');
+              const helpMessage = `
+              ## 🤖 Available Commands
+              
+              - \`/claim\` - Claim this issue and mark as in-progress
+              - \`/unclaim\` - Unclaim this issue and make it available
+              - \`/help\` - Show this help message
+              
+              ## 📋 Development Guidelines
+              
+              - 📚 Check [Development Guide](docs/AGENT_ONBOARDING.md) for workflow
+              - 🤝 Review [Collaboration Guide](docs/ROLES_COLLABORATION.md) for roles
+              - ✅ Ensure 80%+ test coverage before submitting PR
+              - 🎯 Follow conventional commit format
+              `;
+              
+              try {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body: helpMessage.trim()
+                });
+                console.log('✅ Help message posted');
+              } catch (error) {
+                console.error('❌ Failed to post help message:', error.message);
+              }
+              return;
+            }
+            
+            console.log('No matching command found');

@@ -44,8 +44,16 @@ make lint && make test && make build               # Basic quality checks
 ### 4. Pre-Commit Validation (MANDATORY)
 ```bash
 make lint && make test && make build  # All must pass
+# Verify test coverage ≥ 80%
+go tool cover -func=coverage.out | tail -1  # Must show ≥80.0%
 git add . && git commit -m "feat: ..."  # Conventional Commits format
 ```
+
+**⚠️ Test Coverage Requirement (ENFORCED):**
+- **MUST achieve ≥80% test coverage** before committing code
+- Use `go tool cover -func=coverage.out` to check coverage
+- If coverage is below 80%, **MUST** add more test cases
+- Focus on 0% coverage functions and methods first
 
 ### 5. PR Creation (MANDATORY)
 ```bash
@@ -112,7 +120,7 @@ All API requests/responses are validated using Go structs:
 **IMPORTANT: All development work MUST follow the above standard workflow, from Issue to PR completion.**
 
 - **Mock Mode**: Set `MOCK_MODE=true` for testing without database
-- **Test Coverage**: Maintain >80% test coverage across all packages
+- **Test Coverage**: Maintain ≥80% test coverage across all packages (ENFORCED)
 - **Task Entry Point**: ONLY start from GitHub Issues (labels: `backend`/`api`/`docs`)
 - **Commit Standards**: Strictly follow Conventional Commits format
 - **Issue Linking**: PRs MUST include `Fixes #<issue-id>`
@@ -392,8 +400,9 @@ gh issue list --label "blocked" --state open
 # Dependency checking (use with TASK_DEPENDENCY_PLANNING.md)
 gh issue view <issue-id> --json body -q .body | grep -E "- \[ \] #[0-9]+"
 
-# Quality gates (Dev Agent)
+# Quality gates (Dev Agent)  
 make lint && make test && make build
+go tool cover -func=coverage.out | tail -1  # Verify ≥80% coverage
 
 # Standard PR creation
 gh pr create --title "feat: description" --body "Fixes #<issue-id>"
