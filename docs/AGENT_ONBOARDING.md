@@ -23,7 +23,9 @@ git checkout main && git pull origin main           # 切换主分支并拉取�
 git status                            # 确认工作目录干净
 gh issue view <issue-id>              # 查看任务详情
 gh issue edit <issue-id> --add-label "in-progress"  # 标记进行中
-git checkout -b feat/<issue-id>-<short-name>        # 创建功能分支
+# 使用worktree创建独立工作目录
+git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<short-name>
+cd ../drink-master-<issue-id>-<short-name>          # 切换到worktree目录
 make lint && make test && make build  # 基础质量检查
 ```
 
@@ -34,6 +36,7 @@ make lint && make test && make build  # 基础质量检查
 - **严格遵循**分支命名规范：`feat/<issue-id>-<short-name>`
 - **一次只处理一个issue**，禁止并行开发多个任务
 - **冲突处理**：如pull时有冲突，必须先完全解决后再继续
+- **Worktree管理**：每个任务使用独立的worktree目录，避免分支切换带来的文件变化
 
 ### 第2步：任务规划 (MANDATORY)
 - **必须使用 TodoWrite 工具**创建详细的任务计划
@@ -105,10 +108,17 @@ git add . && git commit -m "feat: ..."  # Conventional Commits 格式
   - **原因3**：缺少必要的import
     - **解决**：goimports会自动添加缺失的import
 
-### 第5步：PR 创建 (MANDATORY)
+### 第5步：PR 创建和清理 (MANDATORY)
 ```bash
+# 在worktree目录中推送分支
 git push -u origin feat/<issue-id>-<short-name>
 gh pr create --title "..." --body "Fixes #<issue-id> ..."
+
+# PR合并后，清理worktree和本地分支
+cd ../drink-master                    # 回到主工作目录
+git worktree remove ../drink-master-<issue-id>-<short-name>  # 删除worktree
+git branch -d feat/<issue-id>-<short-name>                   # 删除本地分支
+git remote prune origin              # 清理远程跟踪分支
 ```
 
 **违反流程的后果：PR 将被拒绝，需要重新开始。**
@@ -118,7 +128,8 @@ gh pr create --title "..." --body "Fixes #<issue-id> ..."
 - [ ] **验证工作目录干净** (`git status`)
 - [ ] 查看并理解 Issue 需求
 - [ ] 标记 Issue 为 `in-progress` 
-- [ ] 创建功能分支（基于最新main分支）
+- [ ] **创建worktree工作目录**（`git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<short-name>`）
+- [ ] **切换到worktree目录** (`cd ../drink-master-<issue-id>-<short-name>`)
 - [ ] 运行基础质量检查
 - [ ] **使用 TodoWrite 规划任务**
 - [ ] 实施开发并实时更新进度
@@ -129,6 +140,7 @@ gh pr create --title "..." --body "Fixes #<issue-id> ..."
 - [ ] **验证import格式正确** (`goimports -d` 命令应无输出)
 - [ ] 提交代码并创建 PR
 - [ ] 确保 PR 包含 `Fixes #<issue-id>`
+- [ ] **PR合并后清理worktree** (`git worktree remove` 和 `git branch -d`)
 
 ## 2.1 状态与自动化约定
 - 领取：Issue 下评论 `/claim`（自动指派 + 加 `in-progress` 标签 → 看板 In progress）
@@ -136,7 +148,61 @@ gh pr create --title "..." --body "Fixes #<issue-id> ..."
 - 评审：打开 PR 或转为 Ready for review 时，自动为关联 Issue 加 `review` 标签（→ 看板 Review）；若将 PR 转为 Draft 会移除 `review`
 - 完成：合并 PR（Fixes #id 自动关闭 Issue）→ 看板 Done
 
-## 2.2 特殊任务类型处理
+## 2.2 Git Worktree 工作流详解
+
+### Worktree 优势
+- **并行开发支持**：每个任务拥有独立的工作目录，无需频繁切换分支
+- **文件状态隔离**：避免分支切换时的文件变化影响IDE和构建工具  
+- **依赖管理简化**：共享 `.git` 目录，但可独立管理 `node_modules`、`vendor` 等依赖
+- **编辑器配置共享**：IDE配置文件共享，提供一致的开发体验
+
+### Worktree 命令参考
+```bash
+# 创建新的worktree（示例：任务#456）
+git worktree add ../drink-master-456-user-auth -b feat/456-user-auth
+
+# 查看所有worktree
+git worktree list
+
+# 删除worktree（PR合并后）
+git worktree remove ../drink-master-456-user-auth
+git branch -d feat/456-user-auth  # 删除本地分支
+
+# 清理无效的worktree引用
+git worktree prune
+
+# 修复损坏的worktree（如目录意外删除）
+git worktree repair
+```
+
+### Worktree 文件结构
+```
+drink-master/               # 主工作目录（main分支）
+├── .git/                  # Git仓库数据（所有worktree共享）
+├── docs/
+├── internal/
+└── ...
+
+drink-master-456-user-auth/ # Task #456的worktree
+├── .git -> ../drink-master/.git/worktrees/drink-master-456-user-auth
+├── docs/                  # 独立的工作文件
+├── internal/
+└── ...
+
+drink-master-789-order-api/ # Task #789的worktree  
+├── .git -> ../drink-master/.git/worktrees/drink-master-789-order-api
+├── docs/
+├── internal/
+└── ...
+```
+
+### 最佳实践
+- **命名规范**：严格使用 `../drink-master-<issue-id>-<short-name>` 格式
+- **清理时机**：PR合并后立即清理对应的worktree和本地分支
+- **共享资源**：IDE配置、Git钩子等自动共享，无需额外配置
+- **依赖管理**：每个worktree可以有独立的 `vendor/`、`node_modules/` 等依赖目录
+
+## 2.3 特殊任务类型处理
 
 ### Epic 任务处理流程
 - **Epic 任务特征**：带 `epic` 标签，包含多个子任务
@@ -212,37 +278,43 @@ git commit -m "resolve: merge conflicts with main"
 git checkout feat/old-branch
 git checkout -b feat/new-branch  # 这是错误的！
 
-# ✅ 正确：始终基于最新main分支
+# ✅ 正确：始终基于最新main分支使用worktree
 git checkout main && git pull origin main
-git checkout -b feat/new-branch
+git worktree add ../drink-master-123-feature-name -b feat/123-feature-name
+cd ../drink-master-123-feature-name
 ```
 
 **场景2：工作目录不干净**
 ```bash
 # ❌ 错误：有未提交更改时切换任务
-# 未提交的文件会污染新分支
+# 使用worktree时，每个任务有独立目录，但仍需保持干净
 
-# ✅ 正确：先清理工作目录
+# ✅ 正确：在worktree中提交或保存更改
+cd ../drink-master-123-current-task
 git add . && git commit -m "wip: save current progress"
-# 或者
-git stash push -m "临时保存更改"
+# worktree的优势：可以直接切换到另一个任务目录而不影响当前工作
+cd ../drink-master-456-new-task
 ```
 
 **场景3：并行开发多个Issue**
 ```bash
-# ❌ 错误：同时在多个分支开发
-git checkout feat/issue-1
-# 开发一半，切换到另一个issue
-git checkout -b feat/issue-2  # 这会导致混乱！
+# ❌ 错误：同时在多个分支开发（虽然worktree技术上支持，但不推荐）
+git worktree add ../drink-master-111-feature-a -b feat/111-feature-a
+git worktree add ../drink-master-222-feature-b -b feat/222-feature-b
+# 同时开发两个任务会导致混乱！
 
 # ✅ 正确：完成当前任务后再开始新任务
-# 完成feat/issue-1，提交PR，合并后再开始issue-2
+# 完成feat/111-feature-a，提交PR，合并并清理worktree后再开始222
+cd ../drink-master
+git worktree remove ../drink-master-111-feature-a
+git worktree add ../drink-master-222-feature-b -b feat/222-feature-b
 ```
 
 ### 应急处理
-- **分支污染**：`git checkout main && git branch -D <polluted-branch>` 重新开始
-- **提交错误**：使用 `git reset --soft HEAD~1` 撤销最后一次提交
+- **Worktree污染**：`cd ../drink-master && git worktree remove ../drink-master-<issue-id>-<name> && git branch -D feat/<issue-id>-<name>` 重新开始
+- **提交错误**：在worktree目录中使用 `git reset --soft HEAD~1` 撤销最后一次提交
 - **依赖冲突**：先运行 `go mod tidy` 清理依赖后重新构建
+- **Worktree目录丢失**：使用 `git worktree prune` 清理无效的worktree引用
 
 ## 7. 关键链接
 - 仓库：`https://github.com/ddteam/drink-master`
