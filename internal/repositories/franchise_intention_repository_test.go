@@ -262,3 +262,157 @@ func TestFranchiseIntentionRepository_Delete(t *testing.T) {
 		t.Error("expected error when getting deleted intention")
 	}
 }
+
+func TestFranchiseIntentionRepository_GetPaginated(t *testing.T) {
+	db := setupFranchiseTestDB(t)
+	repo := NewFranchiseIntentionRepository(db)
+
+	// Create multiple test franchise intentions with different statuses
+	memberID := "member-paginate"
+
+	intention1 := &models.FranchiseIntention{
+		ID:               "paginate-1",
+		MemberID:         memberID,
+		ContactName:      "张三",
+		ContactPhone:     "13800138000",
+		IntendedLocation: "北京市",
+		Status:           "Pending",
+		CreatedAt:        time.Now().Add(-2 * time.Hour),
+		UpdatedAt:        time.Now().Add(-2 * time.Hour),
+	}
+
+	intention2 := &models.FranchiseIntention{
+		ID:               "paginate-2",
+		MemberID:         memberID,
+		ContactName:      "李四",
+		ContactPhone:     "13900139000",
+		IntendedLocation: "上海市",
+		Status:           "Approved",
+		CreatedAt:        time.Now().Add(-1 * time.Hour),
+		UpdatedAt:        time.Now().Add(-1 * time.Hour),
+	}
+
+	intention3 := &models.FranchiseIntention{
+		ID:               "paginate-3",
+		MemberID:         memberID,
+		ContactName:      "王五",
+		ContactPhone:     "13700137000",
+		IntendedLocation: "深圳市",
+		Status:           "Rejected",
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+
+	// Create all test data
+	err := repo.Create(intention1)
+	if err != nil {
+		t.Fatalf("failed to create intention1: %v", err)
+	}
+
+	err = repo.Create(intention2)
+	if err != nil {
+		t.Fatalf("failed to create intention2: %v", err)
+	}
+
+	err = repo.Create(intention3)
+	if err != nil {
+		t.Fatalf("failed to create intention3: %v", err)
+	}
+
+	// Test paginated retrieval - all statuses
+	intentions, total, err := repo.GetPaginated(0, 10, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
+	}
+
+	if len(intentions) != 3 {
+		t.Errorf("expected 3 intentions, got %d", len(intentions))
+	}
+
+	// Should be ordered by created_at DESC (newest first)
+	if intentions[0].ID != "paginate-3" {
+		t.Errorf("expected first intention ID 'paginate-3', got '%s'", intentions[0].ID)
+	}
+
+	// Test pagination with limit
+	intentions, total, err = repo.GetPaginated(0, 2, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
+	}
+
+	if len(intentions) != 2 {
+		t.Errorf("expected 2 intentions, got %d", len(intentions))
+	}
+
+	// Test pagination with offset
+	intentions, total, err = repo.GetPaginated(1, 2, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
+	}
+
+	if len(intentions) != 2 {
+		t.Errorf("expected 2 intentions, got %d", len(intentions))
+	}
+
+	// Test filtering by status - Pending
+	intentions, total, err = repo.GetPaginated(0, 10, "Pending")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 1 {
+		t.Errorf("expected total 1, got %d", total)
+	}
+
+	if len(intentions) != 1 {
+		t.Errorf("expected 1 intention, got %d", len(intentions))
+	}
+
+	if intentions[0].Status != "Pending" {
+		t.Errorf("expected status 'Pending', got '%s'", intentions[0].Status)
+	}
+
+	// Test filtering by status - Approved
+	intentions, total, err = repo.GetPaginated(0, 10, "Approved")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 1 {
+		t.Errorf("expected total 1, got %d", total)
+	}
+
+	if len(intentions) != 1 {
+		t.Errorf("expected 1 intention, got %d", len(intentions))
+	}
+
+	if intentions[0].Status != "Approved" {
+		t.Errorf("expected status 'Approved', got '%s'", intentions[0].Status)
+	}
+
+	// Test filtering by non-existent status
+	intentions, total, err = repo.GetPaginated(0, 10, "NonExistent")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if total != 0 {
+		t.Errorf("expected total 0, got %d", total)
+	}
+
+	if len(intentions) != 0 {
+		t.Errorf("expected 0 intentions, got %d", len(intentions))
+	}
+}

@@ -50,12 +50,33 @@ func TestNewMachineHandler(t *testing.T) {
 func TestMachineHandler_Get(t *testing.T) {
 	router, _ := setupMachineTestRouter()
 
+	// Test with machineNo parameter
 	req, _ := http.NewRequest("GET", "/api/Machine/Get?machineNo=test123", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK && w.Code != http.StatusNotFound && w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status OK, NotFound, or BadRequest, got %d", w.Code)
+	}
+
+	// Test without machineNo parameter
+	req2, _ := http.NewRequest("GET", "/api/Machine/Get", nil)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+
+	// Should return bad request due to missing machineNo
+	if w2.Code != http.StatusBadRequest {
+		t.Errorf("Expected status BadRequest for missing machineNo, got %d", w2.Code)
+	}
+
+	// Test with invalid machineNo (empty string)
+	req3, _ := http.NewRequest("GET", "/api/Machine/Get?machineNo=", nil)
+	w3 := httptest.NewRecorder()
+	router.ServeHTTP(w3, req3)
+
+	// Should return bad request for empty machineNo
+	if w3.Code != http.StatusBadRequest {
+		t.Errorf("Expected status BadRequest for empty machineNo, got %d", w3.Code)
 	}
 }
 
@@ -86,38 +107,61 @@ func TestMachineHandler_GetProductList(t *testing.T) {
 func TestMachineHandler_GetPaging(t *testing.T) {
 	router, _ := setupMachineTestRouter()
 
+	// Test without authentication
 	req, _ := http.NewRequest("POST", "/api/Machine/GetPaging", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// 没有认证和参数会返回错误状态
-	if w.Code == 0 {
-		t.Error("Expected some HTTP status code")
+	// Should return forbidden or unauthorized
+	if w.Code != http.StatusForbidden && w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status Forbidden or Unauthorized, got %d", w.Code)
 	}
 }
 
 func TestMachineHandler_GetList(t *testing.T) {
 	router, _ := setupMachineTestRouter()
 
+	// Test without authentication
 	req, _ := http.NewRequest("GET", "/api/Machine/GetList", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// 没有认证会返回错误状态
-	if w.Code == 0 {
-		t.Error("Expected some HTTP status code")
+	// Should return forbidden or unauthorized
+	if w.Code != http.StatusForbidden && w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status Forbidden or Unauthorized, got %d", w.Code)
 	}
 }
 
 func TestMachineHandler_OpenOrCloseBusiness(t *testing.T) {
 	router, _ := setupMachineTestRouter()
 
+	// Test without authentication but with parameters
 	req, _ := http.NewRequest("GET", "/api/Machine/OpenOrClose?machineId=machine123&status=Open", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// 没有认证会返回错误状态
-	if w.Code == 0 {
-		t.Error("Expected some HTTP status code")
+	// Should return forbidden or unauthorized due to lack of authentication
+	if w.Code != http.StatusForbidden && w.Code != http.StatusUnauthorized && w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status Forbidden, Unauthorized, or BadRequest, got %d", w.Code)
+	}
+
+	// Test without machineId parameter
+	req2, _ := http.NewRequest("GET", "/api/Machine/OpenOrClose?status=Open", nil)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+
+	// Should return bad request or authentication error
+	if w2.Code != http.StatusBadRequest && w2.Code != http.StatusForbidden && w2.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status BadRequest, Forbidden, or Unauthorized, got %d", w2.Code)
+	}
+
+	// Test without status parameter
+	req3, _ := http.NewRequest("GET", "/api/Machine/OpenOrClose?machineId=machine123", nil)
+	w3 := httptest.NewRecorder()
+	router.ServeHTTP(w3, req3)
+
+	// Should return bad request or authentication error
+	if w3.Code != http.StatusBadRequest && w3.Code != http.StatusForbidden && w3.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status BadRequest, Forbidden, or Unauthorized, got %d", w3.Code)
 	}
 }

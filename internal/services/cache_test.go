@@ -79,6 +79,50 @@ func TestCacheManager_RemoveLoginStatus(t *testing.T) {
 	}
 }
 
+func TestCacheManager_CleanupExpired(t *testing.T) {
+	cm := NewCacheManager()
+
+	// Set a login status
+	memberID := "test_member_cleanup"
+	token := "test_token"
+	cm.SetLoginStatus(memberID, token)
+
+	// Manually set an expired entry
+	expiredMemberID := "expired_member"
+	expiredToken := "expired_token"
+
+	// Add entry and manually mark it as expired
+	cm.mutex.Lock()
+	cm.data["login:"+expiredMemberID] = CacheEntry{
+		Value:     expiredToken,
+		ExpiresAt: time.Now().Add(-1 * time.Hour), // Already expired
+	}
+	cm.mutex.Unlock()
+
+	// Verify both entries exist initially
+	if _, exists := cm.GetLoginStatus(memberID); !exists {
+		t.Error("Active login status should exist")
+	}
+
+	// Manually trigger cleanup
+	cm.cleanupExpired()
+
+	// Verify active entry still exists
+	if _, exists := cm.GetLoginStatus(memberID); !exists {
+		t.Error("Active login status should still exist after cleanup")
+	}
+
+	// The expired entry should be removed but since GetLoginStatus checks expiry anyway,
+	// we need to check the underlying data map
+	cm.mutex.RLock()
+	_, expiredExists := cm.data["login:"+expiredMemberID]
+	cm.mutex.RUnlock()
+
+	if expiredExists {
+		t.Error("Expired login status should be removed after cleanup")
+	}
+}
+
 func TestCacheManager_ExpiredEntry(t *testing.T) {
 	cm := NewCacheManager()
 	cm.ttl = 1 * time.Millisecond // Very short TTL for testing
