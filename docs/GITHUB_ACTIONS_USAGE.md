@@ -103,9 +103,9 @@ gh pr view <pr-number>
    - 查看添加的 `needs-human-review` 标签
    - 联系相关负责人进行审核
 
-4. **Copilot功能无响应**
-   - 确认评论格式正确: `@copilot review` 或 `@copilot suggest <需求>`
-   - 检查Copilot Integration工作流日志
+4. **Auto Review工作流未触发**
+   - 检查PR状态和CI完成情况
+   - 手动触发: `gh workflow run "Auto PR Review & Merge"`
 
 ### 调试命令
 
@@ -130,8 +130,8 @@ cat .github/workflows/auto-pr-review.yml
    - 包含 `Fixes #<issue-id>` 链接
    - 描述变更原因和影响范围
 
-3. **及时响应自动化建议**
-   - 关注Copilot审查建议
+3. **及时响应自动化处理**
+   - 关注自动合并结果和风险评估
    - 根据风险等级调整PR内容
 
 4. **监控合并状态**
