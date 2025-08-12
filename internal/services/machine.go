@@ -64,13 +64,14 @@ func (s *MachineService) GetMachinePaging(req contracts.GetMachinePagingRequest)
 		}
 
 		items[i] = contracts.GetMachinePagingResponse{
-			ID:             machine.ID,
-			MachineNo:      machine.MachineNo,
-			Name:           machine.Name,
-			Area:           machine.Area,
-			Address:        machine.Address,
-			BusinessStatus: machine.BusinessStatus.ToAPIString(),
-			DeviceID:       deviceID,
+			ID:                 machine.ID,
+			MachineNo:          machine.MachineNo,
+			Name:               machine.Name,
+			Area:               machine.Area,
+			Address:            machine.Address,
+			BusinessStatus:     machine.BusinessStatus.ToAPIString(),
+			BusinessStatusDesc: machine.GetBusinessStatusDesc(),
+			DeviceID:           deviceID,
 		}
 	}
 
@@ -97,10 +98,11 @@ func (s *MachineService) GetMachineList(machineOwnerID string) ([]*contracts.Get
 	result := make([]*contracts.GetMachineListResponse, len(machines))
 	for i, machine := range machines {
 		result[i] = &contracts.GetMachineListResponse{
-			ID:             machine.ID,
-			MachineNo:      machine.MachineNo,
-			Name:           machine.Name,
-			BusinessStatus: machine.BusinessStatus.ToAPIString(),
+			ID:                 machine.ID,
+			MachineNo:          machine.MachineNo,
+			Name:               machine.Name,
+			BusinessStatus:     machine.BusinessStatus.ToAPIString(),
+			BusinessStatusDesc: machine.GetBusinessStatusDesc(),
 		}
 	}
 
@@ -138,16 +140,17 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 	}
 
 	return &contracts.GetMachineByIDResponse{
-		ID:             machine.ID,
-		MachineNo:      machine.MachineNo,
-		Name:           machine.Name,
-		Area:           machine.Area,
-		Address:        machine.Address,
-		BusinessStatus: businessStatus.ToAPIString(),
-		DeviceID:       deviceID,
-		ServicePhone:   servicePhone,
-		CreatedAt:      machine.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      machine.UpdatedAt.Format(time.RFC3339),
+		ID:                 machine.ID,
+		MachineNo:          machine.MachineNo,
+		Name:               machine.Name,
+		Area:               machine.Area,
+		Address:            machine.Address,
+		BusinessStatus:     businessStatus.ToAPIString(),
+		BusinessStatusDesc: enums.GetBusinessStatusDesc(businessStatus),
+		DeviceID:           deviceID,
+		ServicePhone:       servicePhone,
+		CreatedAt:          machine.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:          machine.UpdatedAt.Format(time.RFC3339),
 	}, nil
 }
 

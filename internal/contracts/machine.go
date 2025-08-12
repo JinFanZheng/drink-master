@@ -12,13 +12,14 @@ type GetMachinePagingRequest struct {
 
 // GetMachinePagingResponse 获取售货机分页列表响应项
 type GetMachinePagingResponse struct {
-	ID             string `json:"id"`
-	MachineNo      string `json:"machineNo"`
-	Name           string `json:"name"`
-	Area           string `json:"area"`
-	Address        string `json:"address"`
-	BusinessStatus string `json:"businessStatus"`
-	DeviceID       string `json:"deviceId"`
+	ID                 string `json:"id"`
+	MachineNo          string `json:"machineNo"`
+	Name               string `json:"name"`
+	Area               string `json:"area"`
+	Address            string `json:"address"`
+	BusinessStatus     string `json:"businessStatus"`
+	BusinessStatusDesc string `json:"businessStatusDesc"`
+	DeviceID           string `json:"deviceId"`
 }
 
 // PagingResult 分页结果
@@ -31,24 +32,26 @@ type PagingResult struct {
 
 // GetMachineListResponse 获取售货机列表响应项（简化版）
 type GetMachineListResponse struct {
-	ID             string `json:"id"`
-	MachineNo      string `json:"machineNo"`
-	Name           string `json:"name"`
-	BusinessStatus string `json:"businessStatus"`
+	ID                 string `json:"id"`
+	MachineNo          string `json:"machineNo"`
+	Name               string `json:"name"`
+	BusinessStatus     string `json:"businessStatus"`
+	BusinessStatusDesc string `json:"businessStatusDesc"`
 }
 
 // GetMachineByIDResponse 根据ID获取售货机详情响应
 type GetMachineByIDResponse struct {
-	ID             string `json:"id"`
-	MachineNo      string `json:"machineNo"`
-	Name           string `json:"name"`
-	Area           string `json:"area"`
-	Address        string `json:"address"`
-	BusinessStatus string `json:"businessStatus"` // Open, Close, Offline
-	DeviceID       string `json:"deviceId"`
-	ServicePhone   string `json:"servicePhone"`
-	CreatedAt      string `json:"createdAt"`
-	UpdatedAt      string `json:"updatedAt"`
+	ID                 string `json:"id"`
+	MachineNo          string `json:"machineNo"`
+	Name               string `json:"name"`
+	Area               string `json:"area"`
+	Address            string `json:"address"`
+	BusinessStatus     string `json:"businessStatus"` // Open, Close, Offline
+	BusinessStatusDesc string `json:"businessStatusDesc"`
+	DeviceID           string `json:"deviceId"`
+	ServicePhone       string `json:"servicePhone"`
+	CreatedAt          string `json:"createdAt"`
+	UpdatedAt          string `json:"updatedAt"`
 }
 
 // CheckDeviceExistRequest 检查设备是否存在请求
