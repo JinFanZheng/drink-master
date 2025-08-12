@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -16,7 +17,7 @@ type MachineRepositoryInterface interface {
 	GetByDeviceID(deviceID string) (*models.Machine, error)
 	GetList(machineOwnerID string) ([]*models.Machine, error)
 	GetPaging(machineOwnerID string, keyword string, page, pageSize int) ([]*models.Machine, int64, error)
-	UpdateBusinessStatus(id string, status string) error
+	UpdateBusinessStatus(id string, status enums.BusinessStatus) error
 	CheckDeviceExists(deviceID string) (bool, error)
 }
 
@@ -116,7 +117,7 @@ func (r *MachineRepository) GetPaging(
 }
 
 // UpdateBusinessStatus 更新营业状态
-func (r *MachineRepository) UpdateBusinessStatus(id string, status string) error {
+func (r *MachineRepository) UpdateBusinessStatus(id string, status enums.BusinessStatus) error {
 	result := r.db.Model(&models.Machine{}).
 		Where("id = ?", id).
 		Update("business_status", status)

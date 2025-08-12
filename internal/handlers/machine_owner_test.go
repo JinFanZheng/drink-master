@@ -52,7 +52,7 @@ func setupMachineOwnerTestData(t *testing.T, db *gorm.DB) (string, string, strin
 		MachineOwnerId: owner.ID,
 		MachineNo:      "VM001",
 		Name:           "Test Machine 1",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	require.NoError(t, db.Create(&machine1).Error)
 
@@ -61,7 +61,7 @@ func setupMachineOwnerTestData(t *testing.T, db *gorm.DB) (string, string, strin
 		MachineOwnerId: owner.ID,
 		MachineNo:      "VM002",
 		Name:           "Test Machine 2",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	require.NoError(t, db.Create(&machine2).Error)
 

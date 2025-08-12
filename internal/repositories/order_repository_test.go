@@ -51,7 +51,7 @@ func (suite *OrderRepositoryTestSuite) createTestData() {
 		MachineOwnerId: "test-owner-1",
 		MachineNo:      "TM001",
 		Name:           "Test Machine",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	suite.db.Create(machine)
 

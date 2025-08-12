@@ -44,7 +44,7 @@ func (m *MockMachineRepository) GetPaging(machineOwnerID string, keyword string,
 	return args.Get(0).([]*models.Machine), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockMachineRepository) UpdateBusinessStatus(id string, status string) error {
+func (m *MockMachineRepository) UpdateBusinessStatus(id string, status enums.BusinessStatus) error {
 	args := m.Called(id, status)
 	return args.Error(0)
 }
@@ -136,7 +136,7 @@ func TestMachineService_GetMachinePaging(t *testing.T) {
 			Name:           "Test Machine",
 			Area:           "Area A",
 			Address:        "Address A",
-			BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+			BusinessStatus: enums.BusinessStatusOpen,
 		},
 	}
 
@@ -181,7 +181,7 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 		Name:           "Test Machine",
 		Area:           "Area A",
 		Address:        "Address A",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 		DeviceId:       &deviceID,
 		ServicePhone:   &servicePhone,
 		CreatedAt:      time.Now(),
@@ -214,7 +214,7 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 		MachineOwnerId: "owner-123",
 		MachineNo:      "M001",
 		Name:           "Test Machine",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 		DeviceId:       &deviceID,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -284,11 +284,11 @@ func TestMachineService_OpenOrCloseBusiness(t *testing.T) {
 	machine := &models.Machine{
 		ID:             "machine-123",
 		MachineOwnerId: "owner-123",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
-	mockRepo.On("UpdateBusinessStatus", "machine-123", enums.BusinessStatusClose.ToAPIString()).Return(nil)
+	mockRepo.On("UpdateBusinessStatus", "machine-123", enums.BusinessStatusClose).Return(nil)
 
 	result, err := service.OpenOrCloseBusiness("machine-123", "owner-123")
 	require.NoError(t, err)
@@ -305,7 +305,7 @@ func TestMachineService_OpenOrCloseBusiness_PermissionDenied(t *testing.T) {
 	machine := &models.Machine{
 		ID:             "machine-123",
 		MachineOwnerId: "owner-123",
-		BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -372,14 +372,14 @@ func TestMachineService_GetMachineList(t *testing.T) {
 			MachineOwnerId: "owner-123",
 			MachineNo:      "M001",
 			Name:           "Test Machine 1",
-			BusinessStatus: enums.BusinessStatusOpen.ToAPIString(),
+			BusinessStatus: enums.BusinessStatusOpen,
 		},
 		{
 			ID:             "machine-2",
 			MachineOwnerId: "owner-123",
 			MachineNo:      "M002",
 			Name:           "Test Machine 2",
-			BusinessStatus: enums.BusinessStatusClose.ToAPIString(),
+			BusinessStatus: enums.BusinessStatusClose,
 		},
 	}
 
