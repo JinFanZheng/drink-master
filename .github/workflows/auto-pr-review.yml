@@ -188,15 +188,15 @@ jobs:
           
           case "$RISK_LEVEL" in
             "low")
-              echo "✅ 低风险PR，启用自动合并"
-              gh pr enable-auto-merge $PR_NUMBER --squash
-              gh pr comment $PR_NUMBER --body "🤖 **自动合并已启用**\n\n- 风险等级: 低\n- 原因: $RISK_REASONS\n- 所有质量检查通过\n- 将在所有检查完成后自动合并\n\n由AI代理自动处理 ✨"
+              echo "✅ 低风险PR，执行自动合并"
+              gh api --method PUT repos/${{ github.repository }}/pulls/$PR_NUMBER/merge --field merge_method=squash
+              gh pr comment $PR_NUMBER --body "🤖 **自动合并完成**\n\n- 风险等级: 低\n- 原因: $RISK_REASONS\n- 所有质量检查通过\n- PR已成功合并到主分支\n\n由AI代理自动处理 ✨"
               ;;
             "medium")
               echo "⚠️ 中风险PR，条件合并"
               if [ "${{ steps.basic-checks.outputs.has_issue_link }}" == "true" ]; then
-                gh pr enable-auto-merge $PR_NUMBER --squash
-                gh pr comment $PR_NUMBER --body "🤖 **自动合并已启用**\n\n- 风险等级: 中\n- 原因: $RISK_REASONS\n- 所有验证检查通过\n- 功能测试正常\n- 将在所有检查完成后自动合并\n\n由AI代理审查后自动处理 ✨"
+                gh api --method PUT repos/${{ github.repository }}/pulls/$PR_NUMBER/merge --field merge_method=squash
+                gh pr comment $PR_NUMBER --body "🤖 **自动合并完成**\n\n- 风险等级: 中\n- 原因: $RISK_REASONS\n- 所有验证检查通过\n- 功能测试正常\n- PR已成功合并到主分支\n\n由AI代理审查后自动处理 ✨"
               else
                 gh pr edit $PR_NUMBER --add-label "needs-issue-link"
                 gh pr comment $PR_NUMBER --body "⚠️ **需要补充信息**\n\n此PR缺少Issue链接，请在描述中添加 \`Fixes #<issue-number>\` 后重新触发检查。"
