@@ -24,7 +24,7 @@ type AccountHandler struct {
 func NewAccountHandler(db *gorm.DB, wechatClient *wechat.Client) *AccountHandler {
 	return &AccountHandler{
 		BaseHandler:   NewBaseHandler(db),
-		memberService: services.NewMemberService(db),
+		memberService: services.NewMemberServiceCompat(db),
 		jwtService:    services.NewJWTService(),
 		cacheManager:  services.NewCacheManager(),
 		wechatClient:  wechatClient,

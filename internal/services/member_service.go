@@ -9,6 +9,8 @@ import (
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // MemberService 会员业务逻辑层
@@ -217,4 +219,58 @@ func (s *MemberService) generateFranchiseIntentionID() string {
 		b[i] = charset[num.Int64()]
 	}
 	return "fi-" + string(b)
+}
+
+// 兼容旧版本的构造函数（用于PR #18）
+func NewMemberServiceCompat(db *gorm.DB) *MemberService {
+	memberRepo := repositories.NewMemberRepository(db)
+	franchiseRepo := repositories.NewFranchiseIntentionRepository(db)
+	return NewMemberService(memberRepo, franchiseRepo)
+}
+
+// FindByOpenID finds a member by WeChat OpenID (for PR #18 compatibility)
+func (s *MemberService) FindByOpenID(openID string) (*models.Member, error) {
+	return s.memberRepo.GetByWeChatOpenID(openID)
+}
+
+// FindOrCreateByOpenID finds a member by OpenID or creates a new one (for PR #18 compatibility)
+func (s *MemberService) FindOrCreateByOpenID(openID, nickname, avatarUrl string) (*models.Member, error) {
+	// Try to find existing member
+	member, err := s.memberRepo.GetByWeChatOpenID(openID)
+	if err == nil {
+		// Member exists, update avatar and nickname if provided
+		if nickname != "" {
+			member.Nickname = nickname
+		}
+		if avatarUrl != "" {
+			member.Avatar = avatarUrl
+		}
+		if updateErr := s.memberRepo.Update(member); updateErr != nil {
+			return nil, updateErr
+		}
+		return member, nil
+	}
+
+	// Member not found, create new one
+	if err == gorm.ErrRecordNotFound {
+		newMember := &models.Member{
+			ID:           uuid.New().String(),
+			Nickname:     nickname,
+			Avatar:       avatarUrl,
+			WeChatOpenId: openID,
+			Role:         "Member", // Default role
+		}
+
+		if createErr := s.memberRepo.Create(newMember); createErr != nil {
+			return nil, createErr
+		}
+		return newMember, nil
+	}
+
+	return nil, err
+}
+
+// FindByID finds a member by ID (for PR #18 compatibility)
+func (s *MemberService) FindByID(id string) (*models.Member, error) {
+	return s.memberRepo.GetByID(id)
 }
