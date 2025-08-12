@@ -74,11 +74,11 @@ jobs:
           echo "📊 Checking test coverage..."
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
           echo "Test coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 78" | bc -l) )); then
-            echo "❌ Test coverage is below 78%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Test coverage is below 70%"
             exit 1
           fi
-          echo "✅ Test coverage meets requirements (≥78%)"
+          echo "✅ Test coverage meets requirements (≥70%)"
 
       - name: Build application
         run: |

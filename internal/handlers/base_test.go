@@ -179,3 +179,33 @@ func TestBaseHandler_InternalErrorResponse(t *testing.T) {
 		t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
 	}
 }
+
+func TestBaseHandler_PagingResponse(t *testing.T) {
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	handler := NewBaseHandler(db)
+	c, w := setupBaseTestContext()
+
+	items := []string{"item1", "item2", "item3"}
+	handler.PagingResponse(c, items, 100, 1, 10)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestGetRequestID(t *testing.T) {
+	c, _ := setupBaseTestContext()
+
+	// 测试没有request_id的情况
+	requestID := getRequestID(c)
+	if requestID != "" {
+		t.Errorf("Expected empty request ID when not set, got '%s'", requestID)
+	}
+
+	// 设置request_id并测试
+	c.Set("request_id", "test-request-123")
+	requestID = getRequestID(c)
+	if requestID != "test-request-123" {
+		t.Errorf("Expected request ID to be 'test-request-123', got '%s'", requestID)
+	}
+}

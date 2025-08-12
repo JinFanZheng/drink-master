@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 type OrderRepositoryTestSuite struct {

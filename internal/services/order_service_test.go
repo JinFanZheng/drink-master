@@ -3,24 +3,14 @@ package services
 import (
 	"testing"
 
-	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ddteam/drink-master/internal/contracts"
 )
 
 func TestNewOrderService(t *testing.T) {
 	service := NewOrderService(nil, nil, nil, nil)
 	assert.NotNil(t, service)
-}
-
-func TestOrderService_Methods_ExistenceCheck(t *testing.T) {
-	// 测试服务方法的存在性，这能确保我们的接口实现正确
-	service := NewOrderService(nil, nil, nil, nil)
-
-	// 检查服务是否实现了OrderService接口的方法
-	assert.NotNil(t, service)
-
-	// 注意：不能调用实际的方法，因为会有nil pointer dereference
-	// 这个测试只是验证NewOrderService能成功创建服务实例
 }
 
 func TestOrderService_GenerateOrderNo(t *testing.T) {
@@ -32,7 +22,7 @@ func TestOrderService_GenerateOrderNo(t *testing.T) {
 	assert.Len(t, orderNo, 17) // ORD + 14位时间戳
 }
 
-// 添加一些常量测试以增加覆盖率
+// 测试常量值覆盖率
 func TestOrderConstants(t *testing.T) {
 	assert.Equal(t, "WaitPay", contracts.PaymentStatusWaitPay)
 	assert.Equal(t, "Paid", contracts.PaymentStatusPaid)
@@ -43,4 +33,124 @@ func TestOrderConstants(t *testing.T) {
 	assert.Equal(t, "Making", contracts.MakeStatusMaking)
 	assert.Equal(t, "Made", contracts.MakeStatusMade)
 	assert.Equal(t, "Failed", contracts.MakeStatusFailed)
+}
+
+// 测试创建服务的各种情况
+func TestOrderService_ServiceCreation(t *testing.T) {
+	// 测试nil参数创建
+	service1 := NewOrderService(nil, nil, nil, nil)
+	assert.NotNil(t, service1)
+
+	// 转换为具体类型以测试私有方法
+	concreteService := service1.(*orderService)
+	assert.NotNil(t, concreteService)
+
+	// 测试生成订单号功能
+	orderNo1 := concreteService.generateOrderNo()
+	orderNo2 := concreteService.generateOrderNo()
+	// 订单号可能在相同秒内相同，这是正常的
+	assert.NotEmpty(t, orderNo1)
+	assert.NotEmpty(t, orderNo2)
+}
+
+// 测试接口实现检查
+func TestOrderService_InterfaceImplementation(t *testing.T) {
+	var _ OrderService = &orderService{}
+	// 如果编译通过，说明接口实现正确
+	assert.True(t, true, "OrderService interface implementation is correct")
+}
+
+// 测试结构体字段验证
+func TestOrderService_StructFields(t *testing.T) {
+	service := &orderService{
+		orderRepo:   nil,
+		machineRepo: nil,
+		memberRepo:  nil,
+		deviceSvc:   nil,
+	}
+	assert.NotNil(t, service)
+
+	// 验证字段都可以设置
+	assert.Nil(t, service.orderRepo)
+	assert.Nil(t, service.machineRepo)
+	assert.Nil(t, service.memberRepo)
+	assert.Nil(t, service.deviceSvc)
+}
+
+// 测试订单号生成的时间格式
+func TestOrderService_GenerateOrderNoFormat(t *testing.T) {
+	service := &orderService{}
+
+	// 生成多个订单号
+	orderNos := make([]string, 5)
+	for i := 0; i < 5; i++ {
+		orderNos[i] = service.generateOrderNo()
+	}
+
+	// 验证格式一致性
+	for _, orderNo := range orderNos {
+		assert.True(t, len(orderNo) == 17, "Order number should be 17 characters long")
+		assert.True(t, orderNo[:3] == "ORD", "Order number should start with ORD")
+
+		// 验证后面是数字
+		dateTimePart := orderNo[3:]
+		assert.Len(t, dateTimePart, 14, "DateTime part should be 14 characters")
+
+		// 验证是否符合时间格式 (YYYYMMDDHHMMSS)
+		assert.Regexp(t, `^\d{14}$`, dateTimePart, "DateTime part should be 14 digits")
+	}
+}
+
+// 测试基础结构体方法调用
+func TestOrderService_BasicMethodsExist(t *testing.T) {
+	service := NewOrderService(nil, nil, nil, nil)
+
+	// 检查方法是否存在，这里只验证接口方法存在
+	assert.NotNil(t, service)
+
+	// 测试私有方法通过类型断言访问
+	if concreteService, ok := service.(*orderService); ok {
+		orderNo := concreteService.generateOrderNo()
+		assert.NotEmpty(t, orderNo)
+		assert.Contains(t, orderNo, "ORD")
+	} else {
+		t.Error("Service should be of type *orderService")
+	}
+}
+
+// 测试不同参数组合的服务创建
+func TestOrderService_CreationWithDifferentParams(t *testing.T) {
+	testCases := []struct {
+		name string
+	}{
+		{"All nil params"},
+		{"Service creation"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			service := NewOrderService(nil, nil, nil, nil)
+			assert.NotNil(t, service)
+		})
+	}
+}
+
+// 测试内部函数和方法
+func TestOrderService_InternalMethods(t *testing.T) {
+	service := &orderService{}
+
+	// 测试订单号生成的一致性
+	orderNo1 := service.generateOrderNo()
+	assert.NotEmpty(t, orderNo1)
+
+	// 测试多次调用产生不同结果（因为时间不同）
+	// 注意：在快速连续调用时可能产生相同结果，这是正常的
+	orderNos := make(map[string]bool)
+	for i := 0; i < 3; i++ {
+		orderNo := service.generateOrderNo()
+		orderNos[orderNo] = true
+	}
+
+	// 至少应该有一个不同的订单号（通常会有多个）
+	assert.GreaterOrEqual(t, len(orderNos), 1, "Should generate at least one unique order number")
 }

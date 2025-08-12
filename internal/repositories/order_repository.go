@@ -3,9 +3,10 @@ package repositories
 import (
 	"time"
 
-	"github.com/ddteam/drink-master/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 // OrderRepository 订单仓库接口
