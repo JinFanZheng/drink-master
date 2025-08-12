@@ -15,12 +15,13 @@ type GetMemberOrderPagingRequest struct {
 
 // GetMemberOrderPagingResponse 会员订单分页列表响应
 type GetMemberOrderPagingResponse struct {
-	ID            string          `json:"id" example:"order-123"`
-	OrderNo       string          `json:"orderNo" example:"ORD202508120001"`
-	ProductName   string          `json:"productName" example:"拿铁咖啡"`
-	PayAmount     decimal.Decimal `json:"payAmount" example:"15.80"`
-	CreatedAt     time.Time       `json:"createdAt" example:"2025-08-12T10:30:00Z"`
-	PaymentStatus string          `json:"paymentStatus" example:"Paid"`
+	ID                string          `json:"id" example:"order-123"`
+	OrderNo           string          `json:"orderNo" example:"ORD202508120001"`
+	ProductName       string          `json:"productName" example:"拿铁咖啡"`
+	PayAmount         decimal.Decimal `json:"payAmount" example:"15.80"`
+	CreatedAt         time.Time       `json:"createdAt" example:"2025-08-12T10:30:00Z"`
+	PaymentStatus     string          `json:"paymentStatus" example:"Paid"`
+	PaymentStatusDesc string          `json:"paymentStatusDesc" example:"已支付"`
 }
 
 // CreateOrderRequest 创建订单请求
@@ -55,20 +56,22 @@ type RefundOrderResponse struct {
 
 // GetOrderByIdResponse 根据ID获取订单详情响应
 type GetOrderByIdResponse struct {
-	ID            string          `json:"id" example:"order-123"`
-	OrderNo       string          `json:"orderNo" example:"ORD202508120001"`
-	MachineID     string          `json:"machineId" example:"machine-001"`
-	MachineName   string          `json:"machineName" example:"办公楼1层咖啡机"`
-	ProductID     string          `json:"productId" example:"product-001"`
-	ProductName   string          `json:"productName" example:"拿铁咖啡"`
-	PayAmount     decimal.Decimal `json:"payAmount" example:"15.80"`
-	PaymentStatus string          `json:"paymentStatus" example:"Paid"`
-	MakeStatus    string          `json:"makeStatus" example:"Made"`
-	CreatedAt     time.Time       `json:"createdAt" example:"2025-08-12T10:30:00Z"`
-	PaymentTime   *time.Time      `json:"paymentTime,omitempty" example:"2025-08-12T10:30:30Z"`
-	HasCup        bool            `json:"hasCup" example:"true"`
-	RefundAmount  decimal.Decimal `json:"refundAmount" example:"0"`
-	RefundReason  *string         `json:"refundReason,omitempty"`
+	ID                string          `json:"id" example:"order-123"`
+	OrderNo           string          `json:"orderNo" example:"ORD202508120001"`
+	MachineID         string          `json:"machineId" example:"machine-001"`
+	MachineName       string          `json:"machineName" example:"办公楼1层咖啡机"`
+	ProductID         string          `json:"productId" example:"product-001"`
+	ProductName       string          `json:"productName" example:"拿铁咖啡"`
+	PayAmount         decimal.Decimal `json:"payAmount" example:"15.80"`
+	PaymentStatus     string          `json:"paymentStatus" example:"Paid"`
+	PaymentStatusDesc string          `json:"paymentStatusDesc" example:"已支付"`
+	MakeStatus        string          `json:"makeStatus" example:"Made"`
+	MakeStatusDesc    string          `json:"makeStatusDesc" example:"制作完成"`
+	CreatedAt         time.Time       `json:"createdAt" example:"2025-08-12T10:30:00Z"`
+	PaymentTime       *time.Time      `json:"paymentTime,omitempty" example:"2025-08-12T10:30:30Z"`
+	HasCup            bool            `json:"hasCup" example:"true"`
+	RefundAmount      decimal.Decimal `json:"refundAmount" example:"0"`
+	RefundReason      *string         `json:"refundReason,omitempty"`
 }
 
 // OrderPagingResponse 订单分页响应

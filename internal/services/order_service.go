@@ -72,13 +72,28 @@ func (s *orderService) GetMemberOrderPaging(
 			productName = order.Product.Name
 		}
 
+		paymentStatus := ""
+		switch enums.PaymentStatus(order.PaymentStatus) {
+		case enums.PaymentStatusWaitPay:
+			paymentStatus = contracts.PaymentStatusWaitPay
+		case enums.PaymentStatusPaid:
+			paymentStatus = contracts.PaymentStatusPaid
+		case enums.PaymentStatusRefunded:
+			paymentStatus = contracts.PaymentStatusRefunded
+		case enums.PaymentStatusInvalid:
+			paymentStatus = contracts.PaymentStatusCancelled
+		default:
+			paymentStatus = contracts.PaymentStatusWaitPay
+		}
+
 		orderResponses[i] = contracts.GetMemberOrderPagingResponse{
-			ID:            order.ID,
-			OrderNo:       order.OrderNo,
-			ProductName:   productName,
-			PayAmount:     decimal.NewFromFloat(order.PayAmount),
-			CreatedAt:     order.CreatedAt,
-			PaymentStatus: order.GetPaymentStatusDesc(),
+			ID:                order.ID,
+			OrderNo:           order.OrderNo,
+			ProductName:       productName,
+			PayAmount:         decimal.NewFromFloat(order.PayAmount),
+			CreatedAt:         order.CreatedAt,
+			PaymentStatus:     paymentStatus,
+			PaymentStatusDesc: order.GetPaymentStatusDesc(),
 		}
 	}
 
@@ -118,20 +133,50 @@ func (s *orderService) GetByID(id string) (*contracts.GetOrderByIdResponse, erro
 		return nil, fmt.Errorf("获取订单详情失败: %w", err)
 	}
 
+	paymentStatus := ""
+	switch enums.PaymentStatus(order.PaymentStatus) {
+	case enums.PaymentStatusWaitPay:
+		paymentStatus = contracts.PaymentStatusWaitPay
+	case enums.PaymentStatusPaid:
+		paymentStatus = contracts.PaymentStatusPaid
+	case enums.PaymentStatusRefunded:
+		paymentStatus = contracts.PaymentStatusRefunded
+	case enums.PaymentStatusInvalid:
+		paymentStatus = contracts.PaymentStatusCancelled
+	default:
+		paymentStatus = contracts.PaymentStatusWaitPay
+	}
+
+	makeStatus := ""
+	switch enums.MakeStatus(order.MakeStatus) {
+	case enums.MakeStatusWaitMake:
+		makeStatus = contracts.MakeStatusWaitMake
+	case enums.MakeStatusMaking:
+		makeStatus = contracts.MakeStatusMaking
+	case enums.MakeStatusMade:
+		makeStatus = contracts.MakeStatusMade
+	case enums.MakeStatusMakeFail:
+		makeStatus = contracts.MakeStatusFailed
+	default:
+		makeStatus = contracts.MakeStatusWaitMake
+	}
+
 	// 构建响应
 	response := &contracts.GetOrderByIdResponse{
-		ID:            order.ID,
-		OrderNo:       order.OrderNo,
-		MachineID:     order.MachineId,
-		ProductID:     order.ProductId,
-		PayAmount:     decimal.NewFromFloat(order.PayAmount),
-		PaymentStatus: order.GetPaymentStatusDesc(),
-		MakeStatus:    order.GetMakeStatusDesc(),
-		CreatedAt:     order.CreatedAt,
-		PaymentTime:   order.PaymentTime,
-		HasCup:        order.HasCup,
-		RefundAmount:  decimal.NewFromFloat(order.RefundAmount),
-		RefundReason:  order.RefundReason,
+		ID:                order.ID,
+		OrderNo:           order.OrderNo,
+		MachineID:         order.MachineId,
+		ProductID:         order.ProductId,
+		PayAmount:         decimal.NewFromFloat(order.PayAmount),
+		PaymentStatus:     paymentStatus,
+		PaymentStatusDesc: order.GetPaymentStatusDesc(),
+		MakeStatus:        makeStatus,
+		MakeStatusDesc:    order.GetMakeStatusDesc(),
+		CreatedAt:         order.CreatedAt,
+		PaymentTime:       order.PaymentTime,
+		HasCup:            order.HasCup,
+		RefundAmount:      decimal.NewFromFloat(order.RefundAmount),
+		RefundReason:      order.RefundReason,
 	}
 
 	// 设置机器名称
