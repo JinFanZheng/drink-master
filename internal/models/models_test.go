@@ -6,6 +6,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/enums"
 )
 
 func TestAutoMigrate(t *testing.T) {
@@ -188,7 +190,7 @@ func TestMachineModel(t *testing.T) {
 		Address:        "浦东新区张江路123号",
 		ServicePhone:   &servicePhone,
 		DeviceId:       &deviceId,
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
 	// 测试创建

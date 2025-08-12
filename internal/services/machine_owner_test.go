@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -50,7 +51,7 @@ func setupTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 		Name:           "Test Machine 1",
 		Area:           "Test Area",
 		Address:        "Test Address",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	require.NoError(t, db.Create(&machine).Error)
 
@@ -62,7 +63,7 @@ func setupTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 		Name:           "Test Machine 2",
 		Area:           "Test Area 2",
 		Address:        "Test Address 2",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	require.NoError(t, db.Create(&machine2).Error)
 

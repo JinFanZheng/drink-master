@@ -9,6 +9,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -46,7 +47,7 @@ func TestMachineRepository_GetByID(t *testing.T) {
 		Name:           "Test Machine",
 		Area:           "Test Area",
 		Address:        "Test Address",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -77,7 +78,7 @@ func TestMachineRepository_GetByDeviceID(t *testing.T) {
 		MachineNo:      "M001",
 		Name:           "Test Machine",
 		DeviceId:       &deviceID,
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -107,7 +108,7 @@ func TestMachineRepository_GetList(t *testing.T) {
 			MachineOwnerId: "owner-123",
 			MachineNo:      "M001",
 			Name:           "Machine 1",
-			BusinessStatus: "Open",
+			BusinessStatus: enums.BusinessStatusOpen,
 			CreatedAt:      time.Now().Add(-2 * time.Hour),
 			UpdatedAt:      time.Now(),
 		},
@@ -116,7 +117,7 @@ func TestMachineRepository_GetList(t *testing.T) {
 			MachineOwnerId: "owner-123",
 			MachineNo:      "M002",
 			Name:           "Machine 2",
-			BusinessStatus: "Close",
+			BusinessStatus: enums.BusinessStatusClose,
 			CreatedAt:      time.Now().Add(-1 * time.Hour),
 			UpdatedAt:      time.Now(),
 		},
@@ -125,7 +126,7 @@ func TestMachineRepository_GetList(t *testing.T) {
 			MachineOwnerId: "owner-456", // 不同的机主
 			MachineNo:      "M003",
 			Name:           "Machine 3",
-			BusinessStatus: "Open",
+			BusinessStatus: enums.BusinessStatusOpen,
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
 		},
@@ -163,7 +164,7 @@ func TestMachineRepository_GetPaging(t *testing.T) {
 			Name:           "Coffee Machine",
 			Area:           "Building A",
 			Address:        "Floor 1",
-			BusinessStatus: "Open",
+			BusinessStatus: enums.BusinessStatusOpen,
 			CreatedAt:      time.Now().Add(-3 * time.Hour),
 			UpdatedAt:      time.Now(),
 		},
@@ -174,7 +175,7 @@ func TestMachineRepository_GetPaging(t *testing.T) {
 			Name:           "Juice Machine",
 			Area:           "Building B",
 			Address:        "Floor 2",
-			BusinessStatus: "Close",
+			BusinessStatus: enums.BusinessStatusClose,
 			CreatedAt:      time.Now().Add(-2 * time.Hour),
 			UpdatedAt:      time.Now(),
 		},
@@ -185,7 +186,7 @@ func TestMachineRepository_GetPaging(t *testing.T) {
 			Name:           "Snack Machine",
 			Area:           "Building A",
 			Address:        "Floor 3",
-			BusinessStatus: "Open",
+			BusinessStatus: enums.BusinessStatusOpen,
 			CreatedAt:      time.Now().Add(-1 * time.Hour),
 			UpdatedAt:      time.Now(),
 		},
@@ -225,23 +226,23 @@ func TestMachineRepository_UpdateBusinessStatus(t *testing.T) {
 		MachineOwnerId: "owner-123",
 		MachineNo:      "M001",
 		Name:           "Test Machine",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
 	require.NoError(t, db.Create(machine).Error)
 
 	// 测试更新状态
-	err := repo.UpdateBusinessStatus("machine-123", "Close")
+	err := repo.UpdateBusinessStatus("machine-123", enums.BusinessStatusClose)
 	require.NoError(t, err)
 
 	// 验证更新结果
 	var updated models.Machine
 	require.NoError(t, db.First(&updated, "id = ?", "machine-123").Error)
-	assert.Equal(t, "Close", updated.BusinessStatus)
+	assert.Equal(t, enums.BusinessStatusClose, updated.BusinessStatus)
 
 	// 测试更新不存在的机器
-	err = repo.UpdateBusinessStatus("nonexistent", "Open")
+	err = repo.UpdateBusinessStatus("nonexistent", enums.BusinessStatusOpen)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "machine not found")
 }
@@ -257,7 +258,7 @@ func TestMachineRepository_CheckDeviceExists(t *testing.T) {
 		MachineNo:      "M001",
 		Name:           "Test Machine",
 		DeviceId:       &deviceID,
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}

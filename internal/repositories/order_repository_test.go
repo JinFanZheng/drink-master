@@ -9,6 +9,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -50,7 +51,7 @@ func (suite *OrderRepositoryTestSuite) createTestData() {
 		MachineOwnerId: "test-owner-1",
 		MachineNo:      "TM001",
 		Name:           "Test Machine",
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	suite.db.Create(machine)
 
