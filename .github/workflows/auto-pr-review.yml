@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
     branches: [main]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: write
@@ -14,41 +18,11 @@ jobs:
   auto-review:
     runs-on: ubuntu-latest
     
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: drink_master_test
-          MYSQL_USER: drink_master
-          MYSQL_PASSWORD: testpassword
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0  # 获取完整历史以便进行风险分析
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache: true
-
-      - name: Install dependencies
-        run: |
-          go mod download
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-      - name: Wait for MySQL
-        run: |
-          until nc -z localhost 3306; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
 
       - name: PR Risk Assessment
         id: risk-assessment
@@ -123,73 +97,52 @@ jobs:
             echo "has_issue_link=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Code Quality Checks
+      - name: Check CI Status
         if: steps.basic-checks.outputs.mergeable == 'true'
         env:
-          DB_HOST: localhost
-          DB_PORT: 3306
-          DB_USER: drink_master
-          DB_PASSWORD: testpassword
-          DB_NAME: drink_master_test
-          JWT_SECRET: test_jwt_secret_for_ci
-          GIN_MODE: test
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
         run: |
-          echo "🔍 执行代码质量检查..."
+          echo "🔍 检查CI状态..."
           
-          # Linting检查
-          echo "运行golangci-lint..."
-          golangci-lint run --timeout=5m
-          go fmt ./...
-          go vet ./...
-          echo "✅ 代码质量检查通过"
+          # 等待CI完成并检查状态
+          echo "等待CI工作流完成..."
+          timeout 300s bash -c '
+            while true; do
+              CI_STATUS=$(gh pr checks $PR_NUMBER --json state,conclusion | jq -r ".[] | select(.name==\"CI\") | .conclusion")
+              if [ "$CI_STATUS" = "success" ]; then
+                echo "✅ CI检查通过"
+                break
+              elif [ "$CI_STATUS" = "failure" ] || [ "$CI_STATUS" = "cancelled" ]; then
+                echo "❌ CI检查失败: $CI_STATUS"
+                exit 1
+              else
+                echo "⏳ CI正在运行，等待中..."
+                sleep 10
+              fi
+            done
+          '
           
-          # 测试和覆盖率检查
-          echo "运行测试并检查覆盖率..."
-          go test -v -race -coverprofile=coverage.out ./...
-          
-          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-          echo "测试覆盖率: ${COVERAGE}%"
-          
-          if (( $(echo "$COVERAGE < 78" | bc -l) )); then
-            echo "❌ 测试覆盖率不足: ${COVERAGE}% (要求≥78%)"
-            exit 1
-          fi
-          echo "✅ 测试覆盖率符合要求"
-          
-          # 构建检查
-          echo "构建应用..."
-          go build -v -o bin/drink-master cmd/server/main.go
-          echo "✅ 构建成功"
+          echo "✅ 所有质量检查已通过"
 
-      - name: Functional Validation
+      - name: Additional Validation for Medium/High Risk
         if: steps.risk-assessment.outputs.risk_level == 'medium' || steps.risk-assessment.outputs.risk_level == 'high'
         env:
-          DB_HOST: localhost
-          DB_PORT: 3306
-          DB_USER: drink_master
-          DB_PASSWORD: testpassword
-          DB_NAME: drink_master_test
-          JWT_SECRET: test_jwt_secret_for_ci
-          GIN_MODE: test
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
         run: |
-          echo "🧪 执行功能验证测试..."
+          echo "🧪 执行额外验证..."
           
-          # 启动应用进行健康检查
-          timeout 10s ./bin/drink-master &
-          APP_PID=$!
-          sleep 5
-          
-          # API健康检查
-          if curl -f -s http://localhost:8080/api/health > /dev/null; then
-            echo "✅ API健康检查通过"
-          else
-            echo "❌ API健康检查失败"
-            kill $APP_PID 2>/dev/null || true
-            exit 1
+          # 对于中高风险PR，进行额外的检查
+          if [ "${{ steps.risk-assessment.outputs.risk_level }}" = "high" ]; then
+            echo "🚨 高风险PR需要额外关注"
+            # 检查是否有breaking changes
+            if gh pr view $PR_NUMBER --json body | grep -i -E "(breaking|BREAKING)"; then
+              echo "⚠️ 发现潜在的破坏性变更"
+            fi
           fi
           
-          kill $APP_PID 2>/dev/null || true
-          echo "✅ 功能验证完成"
+          echo "✅ 额外验证完成"
 
       - name: GitHub Copilot Code Review (Medium/High Risk)
         if: steps.risk-assessment.outputs.risk_level != 'low'
