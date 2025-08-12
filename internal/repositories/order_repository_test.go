@@ -73,8 +73,8 @@ func (suite *OrderRepositoryTestSuite) TestCreate() {
 		HasCup:        true,
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
-		PaymentStatus: "WaitPay",
-		MakeStatus:    "WaitMake",
+		PaymentStatus: int(enums.PaymentStatusWaitPay),
+		MakeStatus:    int(enums.MakeStatusWaitMake),
 		RefundAmount:  0,
 	}
 
@@ -100,8 +100,8 @@ func (suite *OrderRepositoryTestSuite) TestGetByID() {
 		HasCup:        true,
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
-		PaymentStatus: "Paid",
-		MakeStatus:    "Made",
+		PaymentStatus: int(enums.PaymentStatusPaid),
+		MakeStatus:    int(enums.MakeStatusMade),
 		RefundAmount:  0,
 	}
 	suite.db.Create(order)
@@ -133,8 +133,8 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 			HasCup:        true,
 			TotalAmount:   15.80,
 			PayAmount:     15.80,
-			PaymentStatus: "Paid",
-			MakeStatus:    "Made",
+			PaymentStatus: int(enums.PaymentStatusPaid),
+			MakeStatus:    int(enums.MakeStatusMade),
 			RefundAmount:  0,
 		},
 		{
@@ -146,8 +146,8 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 			HasCup:        false,
 			TotalAmount:   12.80,
 			PayAmount:     12.80,
-			PaymentStatus: "WaitPay",
-			MakeStatus:    "WaitMake",
+			PaymentStatus: int(enums.PaymentStatusWaitPay),
+			MakeStatus:    int(enums.MakeStatusWaitMake),
 			RefundAmount:  0,
 		},
 	}
@@ -179,15 +179,15 @@ func (suite *OrderRepositoryTestSuite) TestUpdate() {
 		HasCup:        true,
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
-		PaymentStatus: "WaitPay",
-		MakeStatus:    "WaitMake",
+		PaymentStatus: int(enums.PaymentStatusWaitPay),
+		MakeStatus:    int(enums.MakeStatusWaitMake),
 		RefundAmount:  0,
 	}
 	suite.db.Create(order)
 
 	// 更新订单
-	order.PaymentStatus = "Paid"
-	order.MakeStatus = "Made"
+	order.PaymentStatus = int(enums.PaymentStatusPaid)
+	order.MakeStatus = int(enums.MakeStatusMade)
 	paymentTime := time.Now()
 	order.PaymentTime = &paymentTime
 
@@ -198,8 +198,8 @@ func (suite *OrderRepositoryTestSuite) TestUpdate() {
 	var updatedOrder models.Order
 	err = suite.db.First(&updatedOrder, "id = ?", order.ID).Error
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "Paid", updatedOrder.PaymentStatus)
-	assert.Equal(suite.T(), "Made", updatedOrder.MakeStatus)
+	assert.Equal(suite.T(), int(enums.PaymentStatusPaid), updatedOrder.PaymentStatus)
+	assert.Equal(suite.T(), int(enums.MakeStatusMade), updatedOrder.MakeStatus)
 	assert.NotNil(suite.T(), updatedOrder.PaymentTime)
 }
 
@@ -214,8 +214,8 @@ func (suite *OrderRepositoryTestSuite) TestDelete() {
 		HasCup:        true,
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
-		PaymentStatus: "WaitPay",
-		MakeStatus:    "WaitMake",
+		PaymentStatus: int(enums.PaymentStatusWaitPay),
+		MakeStatus:    int(enums.MakeStatusWaitMake),
 		RefundAmount:  0,
 	}
 	suite.db.Create(order)
@@ -247,8 +247,8 @@ func (suite *OrderRepositoryTestSuite) TestGetByOrderNo() {
 		HasCup:        true,
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
-		PaymentStatus: "Paid",
-		MakeStatus:    "Made",
+		PaymentStatus: int(enums.PaymentStatusPaid),
+		MakeStatus:    int(enums.MakeStatusMade),
 		RefundAmount:  0,
 	}
 	suite.db.Create(order)

@@ -101,7 +101,7 @@ func TestMachineOwnerService_GetSales(t *testing.T) {
 			OrderNo:       "ON001",
 			TotalAmount:   15.50,
 			PayAmount:     15.50,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -112,7 +112,7 @@ func TestMachineOwnerService_GetSales(t *testing.T) {
 			OrderNo:       "ON002",
 			TotalAmount:   12.00,
 			PayAmount:     12.00,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -123,7 +123,7 @@ func TestMachineOwnerService_GetSales(t *testing.T) {
 			OrderNo:       "ON003",
 			TotalAmount:   18.00,
 			PayAmount:     18.00,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 	}
@@ -215,7 +215,7 @@ func TestMachineOwnerService_GetSales_OnlyPaidOrders(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON-PAID",
 			PayAmount:     15.50,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -225,7 +225,7 @@ func TestMachineOwnerService_GetSales_OnlyPaidOrders(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON-UNPAID",
 			PayAmount:     12.00,
-			PaymentStatus: "WaitPay",
+			PaymentStatus: int(enums.PaymentStatusWaitPay),
 			PaymentTime:   nil,
 		},
 		{
@@ -235,7 +235,7 @@ func TestMachineOwnerService_GetSales_OnlyPaidOrders(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON-REFUND",
 			PayAmount:     10.00,
-			PaymentStatus: "Refunded",
+			PaymentStatus: int(enums.PaymentStatusRefunded),
 			PaymentTime:   &today,
 		},
 	}
@@ -277,7 +277,7 @@ func TestMachineOwnerService_GetSalesStats(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON001",
 			PayAmount:     15.50,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -287,7 +287,7 @@ func TestMachineOwnerService_GetSalesStats(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON002",
 			PayAmount:     12.00,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 	}
