@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 func setupMemberTestRouter() (*gin.Engine, *MemberHandler) {
@@ -18,6 +20,11 @@ func setupMemberTestRouter() (*gin.Engine, *MemberHandler) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect to test database")
+	}
+
+	// 运行数据库迁移创建表结构
+	if err := models.AutoMigrate(db); err != nil {
+		panic("Failed to migrate test database: " + err.Error())
 	}
 
 	router := gin.New()
