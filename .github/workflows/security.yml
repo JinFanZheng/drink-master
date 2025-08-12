@@ -3,8 +3,20 @@ name: Security
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'LICENSE*'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'LICENSE*'
   schedule:
     - cron: '0 6 * * 1'  # Weekly on Monday at 6AM UTC
 
