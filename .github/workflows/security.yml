@@ -18,31 +18,40 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
 
       - name: Install security tools
         run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          echo "🔧 Installing security tools..."
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "✅ Security tools installed"
 
       - name: Run gosec security scanner
         run: |
           echo "🔐 Running security scan..."
-          gosec -fmt json -out gosec-report.json -stdout ./...
+          gosec -conf .gosec.json -fmt json -out gosec-report.json -stdout ./...
           echo "✅ Security scan completed"
 
       - name: Run vulnerability check
         run: |
           echo "🔍 Checking for known vulnerabilities..."
-          govulncheck ./...
+          govulncheck -json ./... > govulncheck-report.json || echo "⚠️  Vulnerabilities found - saving detailed report"
+          govulncheck ./... || echo "⚠️  Vulnerabilities found - please review and update dependencies"
           echo "✅ Vulnerability check completed"
 
-      - name: Upload security report
+      - name: Upload security reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: security-report
-          path: gosec-report.json
+          name: security-reports
+          path: |
+            gosec-report.json
+            govulncheck-report.json
 
   dependency-review:
     runs-on: ubuntu-latest

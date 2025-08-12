@@ -1,0 +1,51 @@
+# golangci-lint配置文件
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - bin
+    - vendor
+  skip-files:
+    - ".*\\.pb\\.go$"
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 15
+  lll:
+    line-length: 120
+  goimports:
+    local-prefixes: github.com/ddteam/drink-master
+
+linters:
+  enable:
+    - errcheck
+    - gofmt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gocyclo
+    - lll
+    - misspell
+  disable:
+    - typecheck
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - lll
+    - path: cmd/
+      linters:
+        - lll
+    - text: "should have comment"
+      linters:
+        - golint
+
+  max-issues-per-linter: 0
+  max-same-issues: 0

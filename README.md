@@ -317,30 +317,44 @@ make dev-mock
 
 ## 📊 数据模型
 
-### 用户 (User)
-- ID, Username, Email, Password
+### 会员 (Members)
+- ID, Nickname, Avatar, WeChatOpenID
+- Role (member/owner), MachineOwnerID, IsAdmin
 - CreatedAt, UpdatedAt
 
-### 饮品 (Drink) 
-- ID, Name, Category, Price, Description
-- UserID (外键), CreatedAt, UpdatedAt
+### 设备运营商 (MachineOwners)  
+- ID, Name, ContactPhone, ContactEmail
+- ReceivingAccount, CreatedAt, UpdatedAt
 
-### 饮品分类 (DrinkCategory)
-- ID, Name, Description
+### 售货机 (Machines)
+- ID, MachineOwnerID, DeviceName, DeviceID
+- Location, Status, IsBusinessOpen
 - CreatedAt, UpdatedAt
 
-### 消费记录 (ConsumptionLog)
-- ID, DrinkID, UserID, ConsumedAt
-- Quantity, Notes, CreatedAt
+### 商品 (Products)
+- ID, Name, Description, ImageURL
+- Category, CreatedAt, UpdatedAt
+
+### 设备商品关联 (MachineProducts)
+- ID, MachineID, ProductID
+- Price, PriceWithoutCup, Stock, IsAvailable
+- CreatedAt, UpdatedAt
+
+### 订单 (Orders)
+- ID, MemberID, MachineID, ProductID, OrderNo
+- HasCup, TotalAmount, PayAmount
+- PaymentStatus, MakeStatus, PaymentTime
+- RefundAmount, RefundReason, CreatedAt
 
 ## 🔒 认证机制
 
-系统使用JWT (JSON Web Token) 进行用户认证：
+系统使用微信登录 + JWT Token认证：
 
-1. 用户通过 `/api/auth/login` 获取JWT token
-2. 后续请求在Header中携带token：`Authorization: Bearer <token>`
-3. 受保护的路由会验证token有效性
-4. Token默认有效期24小时
+1. 用户通过微信小程序获取code，调用 `/api/Account/WeChatLogin` 接口登录
+2. 系统验证微信code，创建或更新用户信息，返回JWT token
+3. 后续请求在Header中携带token：`Authorization: Bearer <token>`
+4. 受保护的路由通过JWT middleware验证token有效性
+5. Token默认有效期24小时，支持机主和普通会员权限控制
 
 ## 🚀 部署
 
@@ -444,6 +458,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**让我们通过标准化的协作流程，构建高质量的饮品管理系统！** 🍹
+**让我们通过标准化的协作流程，构建高质量的智能售货机平台！** 🏪
 
 *最后更新：2025-08-11*
