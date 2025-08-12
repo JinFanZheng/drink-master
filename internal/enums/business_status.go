@@ -35,3 +35,31 @@ func (bs BusinessStatus) String() string {
 func (bs BusinessStatus) IsValid() bool {
 	return bs >= BusinessStatusOpen && bs <= BusinessStatusOffline
 }
+
+// ToAPIString converts the business status to API string representation
+func (bs BusinessStatus) ToAPIString() string {
+	switch bs {
+	case BusinessStatusOpen:
+		return "Open"
+	case BusinessStatusClose:
+		return "Close"
+	case BusinessStatusOffline:
+		return "Offline"
+	default:
+		return "Unknown"
+	}
+}
+
+// FromAPIString converts API string to BusinessStatus enum
+func FromAPIString(status string) BusinessStatus {
+	switch status {
+	case "Open":
+		return BusinessStatusOpen
+	case "Close":
+		return BusinessStatusClose
+	case "Offline":
+		return BusinessStatusOffline
+	default:
+		return BusinessStatusOpen // default to open
+	}
+}

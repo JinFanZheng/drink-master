@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
 )
@@ -77,7 +78,7 @@ func (s *orderService) GetMemberOrderPaging(
 			ProductName:   productName,
 			PayAmount:     decimal.NewFromFloat(order.PayAmount),
 			CreatedAt:     order.CreatedAt,
-			PaymentStatus: order.PaymentStatus,
+			PaymentStatus: order.GetPaymentStatusDesc(),
 		}
 	}
 
@@ -124,8 +125,8 @@ func (s *orderService) GetByID(id string) (*contracts.GetOrderByIdResponse, erro
 		MachineID:     order.MachineId,
 		ProductID:     order.ProductId,
 		PayAmount:     decimal.NewFromFloat(order.PayAmount),
-		PaymentStatus: order.PaymentStatus,
-		MakeStatus:    order.MakeStatus,
+		PaymentStatus: order.GetPaymentStatusDesc(),
+		MakeStatus:    order.GetMakeStatusDesc(),
 		CreatedAt:     order.CreatedAt,
 		PaymentTime:   order.PaymentTime,
 		HasCup:        order.HasCup,
@@ -192,8 +193,8 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 		HasCup:        request.HasCup,
 		TotalAmount:   request.PayAmount.InexactFloat64(),
 		PayAmount:     request.PayAmount.InexactFloat64(),
-		PaymentStatus: contracts.PaymentStatusWaitPay,
-		MakeStatus:    contracts.MakeStatusWaitMake,
+		PaymentStatus: int(enums.PaymentStatusWaitPay),
+		MakeStatus:    int(enums.MakeStatusWaitMake),
 		RefundAmount:  0,
 	}
 
@@ -221,11 +222,11 @@ func (s *orderService) Refund(request contracts.RefundOrderRequest) (*contracts.
 	}
 
 	// 检查订单状态
-	if order.PaymentStatus != contracts.PaymentStatusPaid {
+	if order.PaymentStatus != int(enums.PaymentStatusPaid) {
 		return nil, fmt.Errorf("订单状态不允许退款")
 	}
 
-	if order.PaymentStatus == contracts.PaymentStatusRefunded {
+	if order.PaymentStatus == int(enums.PaymentStatusRefunded) {
 		return nil, fmt.Errorf("订单已经退款")
 	}
 
@@ -236,7 +237,7 @@ func (s *orderService) Refund(request contracts.RefundOrderRequest) (*contracts.
 
 	// 更新订单状态
 	now := time.Now()
-	order.PaymentStatus = contracts.PaymentStatusRefunded
+	order.PaymentStatus = int(enums.PaymentStatusRefunded)
 	order.RefundTime = &now
 	order.RefundAmount = order.PayAmount
 	order.RefundReason = &request.Reason

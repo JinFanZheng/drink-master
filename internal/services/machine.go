@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/repositories"
 )
 
@@ -68,7 +69,7 @@ func (s *MachineService) GetMachinePaging(req contracts.GetMachinePagingRequest)
 			Name:           machine.Name,
 			Area:           machine.Area,
 			Address:        machine.Address,
-			BusinessStatus: machine.BusinessStatus,
+			BusinessStatus: machine.BusinessStatus.ToAPIString(),
 			DeviceID:       deviceID,
 		}
 	}
@@ -99,7 +100,7 @@ func (s *MachineService) GetMachineList(machineOwnerID string) ([]*contracts.Get
 			ID:             machine.ID,
 			MachineNo:      machine.MachineNo,
 			Name:           machine.Name,
-			BusinessStatus: machine.BusinessStatus,
+			BusinessStatus: machine.BusinessStatus.ToAPIString(),
 		}
 	}
 
@@ -122,7 +123,7 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 	if machine.DeviceId != nil && *machine.DeviceId != "" {
 		online, err := s.deviceService.CheckDeviceOnline(*machine.DeviceId)
 		if err == nil && !online {
-			businessStatus = contracts.BusinessStatusOffline
+			businessStatus = enums.BusinessStatusOffline
 		}
 	}
 
@@ -142,7 +143,7 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 		Name:           machine.Name,
 		Area:           machine.Area,
 		Address:        machine.Address,
-		BusinessStatus: businessStatus,
+		BusinessStatus: businessStatus.ToAPIString(),
 		DeviceID:       deviceID,
 		ServicePhone:   servicePhone,
 		CreatedAt:      machine.CreatedAt.Format(time.RFC3339),
@@ -223,9 +224,9 @@ func (s *MachineService) OpenOrCloseBusiness(
 	}
 
 	// 切换营业状态
-	newStatus := contracts.BusinessStatusClose
-	if machine.BusinessStatus == contracts.BusinessStatusClose {
-		newStatus = contracts.BusinessStatusOpen
+	newStatus := enums.BusinessStatusClose
+	if machine.BusinessStatus == enums.BusinessStatusClose {
+		newStatus = enums.BusinessStatusOpen
 	}
 
 	err = s.machineRepo.UpdateBusinessStatus(machineID, newStatus)
@@ -236,10 +237,10 @@ func (s *MachineService) OpenOrCloseBusiness(
 	message := fmt.Sprintf("售货机已%s", map[string]string{
 		contracts.BusinessStatusOpen:  "开启营业",
 		contracts.BusinessStatusClose: "关闭营业",
-	}[newStatus])
+	}[newStatus.ToAPIString()])
 
 	return &contracts.OpenOrCloseBusinessResponse{
-		Status:  newStatus,
+		Status:  newStatus.ToAPIString(),
 		Message: message,
 	}, nil
 }

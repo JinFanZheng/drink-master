@@ -6,6 +6,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/enums"
 )
 
 func TestAutoMigrate(t *testing.T) {
@@ -188,7 +190,7 @@ func TestMachineModel(t *testing.T) {
 		Address:        "浦东新区张江路123号",
 		ServicePhone:   &servicePhone,
 		DeviceId:       &deviceId,
-		BusinessStatus: "Open",
+		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
 	// 测试创建
@@ -332,10 +334,10 @@ func TestOrderModel(t *testing.T) {
 		HasCup:         true,
 		TotalAmount:    15.50,
 		PayAmount:      15.50,
-		PaymentStatus:  "Paid",
+		PaymentStatus:  1, // enums.PaymentStatusPaid
 		PaymentTime:    &paymentTime,
 		ChannelOrderNo: &channelOrderNo,
-		MakeStatus:     "Made",
+		MakeStatus:     2, // enums.MakeStatusMade
 		RefundAmount:   0.0,
 		RefundReason:   &refundReason,
 	}
@@ -370,6 +372,17 @@ func TestOrderModel(t *testing.T) {
 
 	if foundOrder.Product == nil || foundOrder.Product.Name != product.Name {
 		t.Error("Product association not loaded correctly")
+	}
+
+	// 测试新增的状态描述方法
+	paymentDesc := foundOrder.GetPaymentStatusDesc()
+	if paymentDesc == "" {
+		t.Error("GetPaymentStatusDesc should return a non-empty string")
+	}
+
+	makeDesc := foundOrder.GetMakeStatusDesc()
+	if makeDesc == "" {
+		t.Error("GetMakeStatusDesc should return a non-empty string")
 	}
 }
 
