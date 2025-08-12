@@ -63,7 +63,7 @@ jobs:
       - name: Install development tools
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Run linting
         run: |
