@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupServiceTestDB(t *testing.T) *gorm.DB {
@@ -306,5 +307,142 @@ func TestMemberService_generateFranchiseIntentionID(t *testing.T) {
 	id2 := service.generateFranchiseIntentionID()
 	if id == id2 {
 		t.Error("expected different IDs to be generated")
+	}
+}
+
+// Test compatibility functions for PR #18
+
+func TestNewMemberServiceCompat(t *testing.T) {
+	db := setupServiceTestDB(t)
+	service := NewMemberServiceCompat(db)
+
+	if service == nil {
+		t.Fatal("expected service to be created")
+	}
+
+	if service.memberRepo == nil {
+		t.Error("expected service to have member repository")
+	}
+
+	if service.franchiseIntentionRepo == nil {
+		t.Error("expected service to have franchise intention repository")
+	}
+}
+
+func TestMemberService_FindByOpenID(t *testing.T) {
+	db := setupServiceTestDB(t)
+	service := NewMemberServiceCompat(db)
+
+	// Create a test member
+	testMember := createServiceTestMember(t, db)
+
+	// Test finding existing member by OpenID
+	found, err := service.FindByOpenID(testMember.WeChatOpenId)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if found == nil {
+		t.Fatal("expected to find member")
+	}
+	if found.ID != testMember.ID {
+		t.Errorf("expected ID '%s', got '%s'", testMember.ID, found.ID)
+	}
+
+	// Test finding non-existent member
+	_, err = service.FindByOpenID("non-existent-openid")
+	if err == nil {
+		t.Error("expected error for non-existent OpenID")
+	}
+}
+
+func TestMemberService_FindByID(t *testing.T) {
+	db := setupServiceTestDB(t)
+	service := NewMemberServiceCompat(db)
+
+	// Create a test member
+	testMember := createServiceTestMember(t, db)
+
+	// Test finding existing member by ID
+	found, err := service.FindByID(testMember.ID)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if found == nil {
+		t.Fatal("expected to find member")
+	}
+	if found.ID != testMember.ID {
+		t.Errorf("expected ID '%s', got '%s'", testMember.ID, found.ID)
+	}
+
+	// Test finding non-existent member
+	_, err = service.FindByID("non-existent-id")
+	if err == nil {
+		t.Error("expected error for non-existent ID")
+	}
+}
+
+func TestMemberService_FindOrCreateByOpenID_ExistingMember(t *testing.T) {
+	db := setupServiceTestDB(t)
+	service := NewMemberServiceCompat(db)
+
+	// Create a test member
+	testMember := createServiceTestMember(t, db)
+
+	// Test finding and updating existing member
+	found, err := service.FindOrCreateByOpenID(testMember.WeChatOpenId, "新昵称", "https://example.com/new-avatar.jpg")
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if found == nil {
+		t.Fatal("expected to find member")
+	}
+	if found.ID != testMember.ID {
+		t.Errorf("expected ID '%s', got '%s'", testMember.ID, found.ID)
+	}
+	if found.Nickname != "新昵称" {
+		t.Errorf("expected nickname '新昵称', got '%s'", found.Nickname)
+	}
+	if found.Avatar != "https://example.com/new-avatar.jpg" {
+		t.Errorf("expected avatar 'https://example.com/new-avatar.jpg', got '%s'", found.Avatar)
+	}
+}
+
+func TestMemberService_FindOrCreateByOpenID_NewMember(t *testing.T) {
+	db := setupServiceTestDB(t)
+	service := NewMemberServiceCompat(db)
+
+	// Test creating new member
+	openID := "new-test-openid-123"
+	nickname := "新用户"
+	avatar := "https://example.com/new-user-avatar.jpg"
+
+	created, err := service.FindOrCreateByOpenID(openID, nickname, avatar)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if created == nil {
+		t.Fatal("expected to create member")
+	}
+	if created.ID == "" {
+		t.Error("expected non-empty ID")
+	}
+	if created.Nickname != nickname {
+		t.Errorf("expected nickname '%s', got '%s'", nickname, created.Nickname)
+	}
+	if created.Avatar != avatar {
+		t.Errorf("expected avatar '%s', got '%s'", avatar, created.Avatar)
+	}
+	if created.WeChatOpenId != openID {
+		t.Errorf("expected OpenID '%s', got '%s'", openID, created.WeChatOpenId)
+	}
+	if created.Role != "Member" {
+		t.Errorf("expected role 'Member', got '%s'", created.Role)
+	}
+
+	// Verify member was actually created in database
+	var count int64
+	db.Model(&models.Member{}).Where("we_chat_open_id = ?", openID).Count(&count)
+	if count != 1 {
+		t.Errorf("expected 1 member in database, got %d", count)
 	}
 }

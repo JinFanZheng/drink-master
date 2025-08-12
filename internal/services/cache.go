@@ -71,11 +71,8 @@ func (c *CacheManager) cleanup() {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			c.cleanupExpired()
-		}
+	for range ticker.C {
+		c.cleanupExpired()
 	}
 }
 

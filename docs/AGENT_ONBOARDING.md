@@ -51,8 +51,9 @@ make lint && make test && make build  # 基础质量检查
 make lint && make test && make build  # 必须全部通过
 # 检查测试覆盖率是否达到80%+
 go tool cover -func=coverage.out | tail -1  # 必须显示 ≥80.0%
-# 检查代码格式化
-go fmt ./...  # 必须运行以确保代码格式正确
+# 检查代码格式化和import格式
+go fmt ./...        # 必须运行以确保代码格式正确
+goimports -w ./...  # 必须运行以确保import分组格式正确
 git add . && git commit -m "feat: ..."  # Conventional Commits 格式
 ```
 
@@ -62,7 +63,14 @@ git add . && git commit -m "feat: ..."  # Conventional Commits 格式
 - 如果覆盖率不足80%，**必须**添加更多测试用例
 - 重点关注0%覆盖率的函数和方法，优先编写测试
 - **代码格式化必须符合Go标准**，使用 `go fmt ./...` 格式化所有代码
-- CI中的gofmt检查失败会导致构建失败，必须修复后重新提交
+- **Import分组格式必须符合项目标准**：
+  - 标准库包（如 `fmt`, `time`）
+  - 空行
+  - 外部第三方包（如 `github.com/gin-gonic/gin`, `gorm.io/gorm`）
+  - 空行  
+  - 项目内部包（如 `github.com/ddteam/drink-master/internal/*`）
+- 使用 `goimports -w <文件>` 自动修复import格式问题
+- CI中的gofmt和goimports检查失败会导致构建失败，必须修复后重新提交
 
 ### 第5步：PR 创建 (MANDATORY)
 ```bash
@@ -136,6 +144,7 @@ git commit -m "resolve: merge conflicts with main"
 - [ ] `make lint && make test && make build` 均通过
 - [ ] **测试覆盖率 ≥ 80%**：运行 `go tool cover -func=coverage.out | tail -1` 确认
 - [ ] **代码格式化正确**：运行 `go fmt ./...` 确保无格式化问题
+- [ ] **Import格式正确**：运行 `goimports -w ./...` 确保import分组符合项目标准
 - [ ] 若改契约：PR 中说明，并更新 README"变更记录"
 - [ ] PR 描述包含 `Fixes #<issue-id>`；CI 绿灯
 - [ ] 接口返回包含必要信息（如错误码、分页信息），API文档更新

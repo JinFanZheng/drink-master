@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // MemberService 会员业务逻辑层
@@ -251,8 +252,9 @@ func (s *MemberService) FindOrCreateByOpenID(openID, nickname, avatarUrl string)
 		return member, nil
 	}
 
-	// Member not found, create new one
-	if err == gorm.ErrRecordNotFound {
+	// Member not found, create new one (check for "member not found" in error message)
+	if err != nil && (err == gorm.ErrRecordNotFound ||
+		fmt.Sprintf("%v", err) == fmt.Sprintf("member not found with openID: %s", openID)) {
 		newMember := &models.Member{
 			ID:           uuid.New().String(),
 			Nickname:     nickname,

@@ -11,7 +11,7 @@ func TestNewJWTService(t *testing.T) {
 	service := NewJWTService()
 
 	if service == nil {
-		t.Error("JWT service should not be nil")
+		t.Fatal("JWT service should not be nil")
 	}
 
 	if len(service.secret) == 0 {

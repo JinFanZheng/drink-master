@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/repositories"
 	"github.com/ddteam/drink-master/internal/services"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // MemberHandler 会员处理器 (对应MobileAPI MemberController)

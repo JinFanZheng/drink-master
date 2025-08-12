@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ddteam/drink-master/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 func setupFranchiseTestDB(t *testing.T) *gorm.DB {

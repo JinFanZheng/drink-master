@@ -9,7 +9,7 @@ func TestNewCacheManager(t *testing.T) {
 	cm := NewCacheManager()
 
 	if cm == nil {
-		t.Error("Cache manager should not be nil")
+		t.Fatal("Cache manager should not be nil")
 	}
 
 	if cm.data == nil {

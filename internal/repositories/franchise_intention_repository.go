@@ -3,8 +3,9 @@ package repositories
 import (
 	"fmt"
 
-	"github.com/ddteam/drink-master/internal/models"
 	"gorm.io/gorm"
+
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 // FranchiseIntentionRepository 加盟意向数据访问层

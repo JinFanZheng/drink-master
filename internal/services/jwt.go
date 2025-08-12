@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/ddteam/drink-master/internal/middleware"
 	"github.com/ddteam/drink-master/internal/models"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // JWTService handles JWT token operations
