@@ -62,6 +62,71 @@ file_impacts:
   - "internal/contracts/drink.go"      # 影响的契约文件
 ```
 
+### 1.3 并行执行决策模型
+
+基于技术约束和依赖特性，任务并行性可按以下模型分类：
+
+#### 🟢 可并行场景
+```yaml
+1. 前后端协作:
+   条件: "基于API契约(internal/contracts/)"
+   示例: "后端实现/api/drinks + 前端调用逻辑"
+   
+2. 数据库业务层并行:
+   条件: "基于预期表结构开发业务逻辑"
+   示例: "数据库迁移 + 基于schema的service层代码"
+   
+3. 接口驱动开发:
+   条件: "基于Go interface定义"
+   示例: "定义PaymentService interface + 并行实现具体provider"
+   
+4. 独立功能模块:
+   条件: "无代码依赖的功能"
+   示例: "用户管理模块 + 统计报表模块"
+```
+
+#### 🔴 必须串行场景
+```yaml
+1. Go类型依赖:
+   原因: "编译时类型检查，struct/interface定义的上下游"
+   示例: "UserService struct定义 → OrderService使用UserService"
+   
+2. 数据库Schema约束:
+   原因: "外键约束要求表创建顺序"
+   示例: "CREATE TABLE users → CREATE TABLE orders(user_id FK)"
+   
+3. 配置运行时依赖:
+   原因: "运行时环境变量或配置文件"
+   示例: "Redis配置添加 → 缓存功能测试"
+```
+
+#### ⚠️ 风险并行场景
+```yaml
+1. 文档驱动开发:
+   风险: "无代码契约，存在理解偏差"
+   缓解: "尽快建立代码级契约(interface/struct)"
+   
+2. 第三方服务集成:
+   风险: "外部依赖的不确定性"
+   缓解: "使用mock和interface隔离外部依赖"
+```
+
+**决策流程图**：
+```mermaid
+graph TD
+    A[分析任务] --> B{是否有Go类型依赖?}
+    B -->|有| C[串行执行]
+    B -->|无| D{是否有API契约?}
+    D -->|有| E[可并行执行]
+    D -->|无| F{是否独立模块?}
+    F -->|是| E
+    F -->|否| G[评估风险并行]
+    
+    style C fill:#ff6b6b
+    style E fill:#4ecdc4  
+    style G fill:#ffd93d
+```
+
 ### 1.2 依赖图构建步骤
 
 1. **功能拆分**：将Epic拆分为独立的功能单元
