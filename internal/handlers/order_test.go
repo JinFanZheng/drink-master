@@ -6,11 +6,53 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// Mock OrderService for testing
+type mockOrderService struct {
+	mock.Mock
+}
+
+func (m *mockOrderService) GetMemberOrderPaging(request contracts.GetMemberOrderPagingRequest) (*contracts.OrderPagingResponse, error) {
+	args := m.Called(request)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*contracts.OrderPagingResponse), args.Error(1)
+}
+
+func (m *mockOrderService) GetByID(id string) (*contracts.GetOrderByIdResponse, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*contracts.GetOrderByIdResponse), args.Error(1)
+}
+
+func (m *mockOrderService) Create(request contracts.CreateOrderRequest) (*contracts.CreateOrderResponse, error) {
+	args := m.Called(request)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*contracts.CreateOrderResponse), args.Error(1)
+}
+
+func (m *mockOrderService) Refund(request contracts.RefundOrderRequest) (*contracts.RefundOrderResponse, error) {
+	args := m.Called(request)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*contracts.RefundOrderResponse), args.Error(1)
+}
 
 func setupOrderTestRouter() (*gin.Engine, *OrderHandler) {
 	gin.SetMode(gin.TestMode)
@@ -21,7 +63,8 @@ func setupOrderTestRouter() (*gin.Engine, *OrderHandler) {
 	}
 
 	router := gin.New()
-	orderHandler := NewOrderHandler(db)
+	// 使用nil服务进行基本测试，在需要服务的测试中使用mock
+	orderHandler := NewOrderHandler(db, nil)
 
 	router.POST("/api/Order/GetPaging", orderHandler.GetPaging)
 	router.GET("/api/Order/Get", orderHandler.Get)
@@ -33,11 +76,11 @@ func setupOrderTestRouter() (*gin.Engine, *OrderHandler) {
 
 func TestNewOrderHandler(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewOrderHandler(db)
+	mockService := &mockOrderService{}
+	handler := NewOrderHandler(db, mockService)
 
-	if handler == nil {
-		t.Error("Expected handler to be created")
-	}
+	assert.NotNil(t, handler)
+	assert.NotNil(t, handler.orderService)
 }
 
 func TestOrderHandler_GetPaging(t *testing.T) {
@@ -57,61 +100,101 @@ func TestOrderHandler_GetPaging(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	// 没有member_id会返回401
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
-	}
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestOrderHandler_GetPaging_WithAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewOrderHandler(db)
+
+	// 创建mock服务
+	mockService := &mockOrderService{}
+	handler := NewOrderHandler(db, mockService)
+
+	// 设置期望
+	expectedResponse := &contracts.OrderPagingResponse{
+		Orders: []contracts.GetMemberOrderPagingResponse{
+			{
+				ID:            "order-123",
+				OrderNo:       "ORD202508120001",
+				ProductName:   "拿铁咖啡",
+				PayAmount:     decimal.NewFromFloat(15.80),
+				CreatedAt:     time.Now(),
+				PaymentStatus: "Paid",
+			},
+		},
+		Meta: contracts.PaginationMeta{
+			Total: 1,
+			Count: 1,
+			Meta: &contracts.Meta{
+				Timestamp: time.Now(),
+			},
+		},
+	}
+
+	mockService.On("GetMemberOrderPaging", mock.AnythingOfType("contracts.GetMemberOrderPagingRequest")).Return(expectedResponse, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", "/api/Order/GetPaging", nil)
+
+	// 构建请求体
+	requestBody := `{"pageIndex": 1, "pageSize": 10}`
+	c.Request, _ = http.NewRequest("POST", "/api/Order/GetPaging", bytes.NewBuffer([]byte(requestBody)))
+	c.Request.Header.Set("Content-Type", "application/json")
 
 	// 设置认证信息
 	c.Set("member_id", "test_member_123")
 
 	handler.GetPaging(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockService.AssertExpectations(t)
 }
 
 func TestOrderHandler_Get(t *testing.T) {
 	router, _ := setupOrderTestRouter()
 
-	req, _ := http.NewRequest("GET", "/api/Order/Get?orderId=order123", nil)
+	req, _ := http.NewRequest("GET", "/api/Order/Get?id=order123", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
 	// 没有member_id会返回401
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
-	}
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestOrderHandler_Get_WithAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewOrderHandler(db)
+
+	// 创建mock服务
+	mockService := &mockOrderService{}
+	handler := NewOrderHandler(db, mockService)
+
+	// 设置期望
+	expectedResponse := &contracts.GetOrderByIdResponse{
+		ID:            "order-123",
+		OrderNo:       "ORD202508120001",
+		MachineID:     "machine-001",
+		ProductName:   "拿铁咖啡",
+		PayAmount:     decimal.NewFromFloat(15.80),
+		PaymentStatus: "Paid",
+		CreatedAt:     time.Now(),
+	}
+
+	mockService.On("GetByID", "order123").Return(expectedResponse, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/api/Order/Get?orderId=order123", nil)
+	c.Request, _ = http.NewRequest("GET", "/api/Order/Get?id=order123", nil)
 
 	// 设置认证信息
 	c.Set("member_id", "test_member_456")
 
 	handler.Get(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockService.AssertExpectations(t)
 }
 
 func TestOrderHandler_Create(t *testing.T) {
@@ -122,6 +205,7 @@ func TestOrderHandler_Create(t *testing.T) {
 		"machineId": "machine123",
 		"productId": "product456",
 		"hasCup":    true,
+		"payAmount": "15.80",
 	}
 
 	jsonData, _ := json.Marshal(orderData)
@@ -132,28 +216,41 @@ func TestOrderHandler_Create(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	// 没有member_id会返回401
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
-	}
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestOrderHandler_Create_WithAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewOrderHandler(db)
+
+	// 创建mock服务
+	mockService := &mockOrderService{}
+	handler := NewOrderHandler(db, mockService)
+
+	// 设置期望
+	expectedResponse := &contracts.CreateOrderResponse{
+		OrderID: "order-123",
+		OrderNo: "ORD202508120001",
+		Message: "订单创建成功",
+	}
+
+	mockService.On("Create", mock.AnythingOfType("contracts.CreateOrderRequest")).Return(expectedResponse, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", "/api/Order/Create", nil)
+
+	// 构建请求体
+	requestBody := `{"machineId": "machine123", "productId": "product456", "hasCup": true, "payAmount": "15.80"}`
+	c.Request, _ = http.NewRequest("POST", "/api/Order/Create", bytes.NewBuffer([]byte(requestBody)))
+	c.Request.Header.Set("Content-Type", "application/json")
 
 	// 设置认证信息
 	c.Set("member_id", "test_member_789")
 
 	handler.Create(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusCreated, w.Code)
+	mockService.AssertExpectations(t)
 }
 
 func TestOrderHandler_Refund(t *testing.T) {
@@ -172,27 +269,41 @@ func TestOrderHandler_Refund(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	// 没有member_id会返回401
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
-	}
+	// 没有member_id会返回403，因为退款需要机主权限
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
 func TestOrderHandler_Refund_WithAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	handler := NewOrderHandler(db)
+
+	// 创建mock服务
+	mockService := &mockOrderService{}
+	handler := NewOrderHandler(db, mockService)
+
+	// 设置期望
+	expectedResponse := &contracts.RefundOrderResponse{
+		OrderID:      "order-123",
+		RefundAmount: decimal.NewFromFloat(15.80),
+		Message:      "退款成功",
+	}
+
+	mockService.On("Refund", mock.AnythingOfType("contracts.RefundOrderRequest")).Return(expectedResponse, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", "/api/Order/Refund", nil)
 
-	// 设置认证信息
+	// 构建请求体
+	requestBody := `{"orderId": "order123", "reason": "商品有问题"}`
+	c.Request, _ = http.NewRequest("POST", "/api/Order/Refund", bytes.NewBuffer([]byte(requestBody)))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	// 设置认证信息和机主权限
 	c.Set("member_id", "test_member_101")
+	c.Set("role", "Owner")
 
 	handler.Refund(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockService.AssertExpectations(t)
 }

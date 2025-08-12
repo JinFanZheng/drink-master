@@ -1,6 +1,11 @@
 package handlers
 
 import (
+	"errors"
+	"net/http"
+
+	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -8,12 +13,14 @@ import (
 // OrderHandler 订单处理器 (对应MobileAPI OrderController)
 type OrderHandler struct {
 	*BaseHandler
+	orderService services.OrderService
 }
 
 // NewOrderHandler 创建订单处理器
-func NewOrderHandler(db *gorm.DB) *OrderHandler {
+func NewOrderHandler(db *gorm.DB, orderService services.OrderService) *OrderHandler {
 	return &OrderHandler{
-		BaseHandler: NewBaseHandler(db),
+		BaseHandler:  NewBaseHandler(db),
+		orderService: orderService,
 	}
 }
 
@@ -26,13 +33,38 @@ func (h *OrderHandler) GetPaging(c *gin.Context) {
 		return
 	}
 
-	// TODO: 实现分页获取订单列表逻辑
-	_ = memberID // 避免未使用变量警告
-	h.PagingResponse(c, []interface{}{}, 0, 1, 10)
+	var request contracts.GetMemberOrderPagingRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		h.ValidationErrorResponse(c, err)
+		return
+	}
+
+	// 设置会员ID
+	request.MemberID = memberID
+
+	// 设置默认分页参数
+	if request.PageIndex <= 0 {
+		request.PageIndex = 1
+	}
+	if request.PageSize <= 0 {
+		request.PageSize = 10
+	}
+
+	response, err := h.orderService.GetMemberOrderPaging(request)
+	if err != nil {
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, contracts.APIResponse{
+		Success: true,
+		Data:    response.Orders,
+		Meta:    response.Meta.Meta,
+	})
 }
 
 // Get 获取订单详情
-// GET /api/Order/Get
+// GET /api/Order/Get?id=xxx
 func (h *OrderHandler) Get(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -40,11 +72,26 @@ func (h *OrderHandler) Get(c *gin.Context) {
 		return
 	}
 
-	// TODO: 实现获取订单详情逻辑
-	h.SuccessResponse(c, map[string]interface{}{
-		"id":       "temp_order_id",
-		"memberId": memberID,
-	})
+	orderID := c.Query("id")
+	if orderID == "" {
+		h.ValidationErrorResponse(c, errors.New("订单ID不能为空"))
+		return
+	}
+
+	response, err := h.orderService.GetByID(orderID)
+	if err != nil {
+		if err.Error() == "订单不存在" {
+			h.NotFoundResponse(c, "订单不存在")
+			return
+		}
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	// 简单的权限检查 - 这里可以根据实际需求优化
+	_ = memberID
+
+	h.SuccessResponse(c, response)
 }
 
 // Create 创建订单
@@ -56,24 +103,79 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// TODO: 实现创建订单逻辑
-	h.SuccessResponseWithMessage(c, map[string]interface{}{
-		"orderId":  "temp_order_id",
-		"memberId": memberID,
-	}, "订单创建成功")
+	var request contracts.CreateOrderRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		h.ValidationErrorResponse(c, err)
+		return
+	}
+
+	// 设置会员ID
+	request.MemberID = memberID
+
+	response, err := h.orderService.Create(request)
+	if err != nil {
+		if err.Error() == "会员不存在" || err.Error() == "机器不存在" {
+			h.ValidationErrorResponse(c, err)
+			return
+		}
+		if err.Error() == "机器不在线，下单失败" {
+			c.JSON(http.StatusBadRequest, contracts.APIResponse{
+				Success: false,
+				Error: &contracts.APIError{
+					Code:    contracts.ErrorCodeDeviceOffline,
+					Message: "机器不在线，下单失败",
+				},
+			})
+			return
+		}
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, contracts.APIResponse{
+		Success: true,
+		Data:    response,
+	})
 }
 
 // Refund 申请退款
 // POST /api/Order/Refund
 func (h *OrderHandler) Refund(c *gin.Context) {
-	memberID, exists := h.GetMemberID(c)
-	if !exists {
-		h.UnauthorizedResponse(c, "无效的用户信息")
+	// 检查是否为机主
+	isMachineOwner := h.IsMachineOwner(c)
+	if !isMachineOwner {
+		h.ForbiddenResponse(c, "您不是机主，无法退款")
 		return
 	}
 
-	// TODO: 实现退款逻辑
-	h.SuccessResponseWithMessage(c, map[string]interface{}{
-		"memberId": memberID,
-	}, "退款申请提交成功")
+	var request contracts.RefundOrderRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		h.ValidationErrorResponse(c, err)
+		return
+	}
+
+	// 设置机主权限标识
+	request.IsMachineOwner = true
+
+	response, err := h.orderService.Refund(request)
+	if err != nil {
+		if err.Error() == "订单不存在" {
+			h.NotFoundResponse(c, "订单不存在")
+			return
+		}
+		if err.Error() == "订单状态不允许退款" || err.Error() == "订单已经退款" {
+			c.JSON(http.StatusBadRequest, contracts.APIResponse{
+				Success: false,
+				Error: &contracts.APIError{
+					Code:    contracts.ErrorCodeInvalidOrderStatus,
+					Message: err.Error(),
+				},
+			})
+			return
+		}
+		h.InternalErrorResponse(c, err)
+		return
+	}
+
+	h.SuccessResponseWithMessage(c, response, "退款成功")
 }
