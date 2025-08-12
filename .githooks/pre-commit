@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# Pre-commit hook for Go projects
+# This script runs the same checks as the CI pipeline
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Check if we're in a Git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "❌ Not in a Git repository"
+    exit 1
+fi
+
+# Get list of staged Go files
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+
+if [ -z "$STAGED_GO_FILES" ]; then
+    echo "✅ No Go files staged, skipping checks"
+    exit 0
+fi
+
+echo "📝 Staged Go files:"
+echo "$STAGED_GO_FILES"
+
+# Run go mod tidy
+echo "📦 Running go mod tidy..."
+go mod tidy
+
+# Check if go mod tidy made changes
+if ! git diff --exit-code go.mod go.sum; then
+    echo "❌ go mod tidy made changes. Please add them to your commit."
+    echo "Run: git add go.mod go.sum"
+    exit 1
+fi
+
+# Run go fmt
+echo "🎨 Running go fmt..."
+UNFORMATTED_FILES=$(gofmt -l $STAGED_GO_FILES)
+if [ -n "$UNFORMATTED_FILES" ]; then
+    echo "❌ The following files are not formatted:"
+    echo "$UNFORMATTED_FILES"
+    echo "Run: go fmt ./..."
+    exit 1
+fi
+
+# Run go vet
+echo "🔍 Running go vet..."
+go vet ./...
+
+# Run golangci-lint if available
+if command -v golangci-lint >/dev/null 2>&1; then
+    echo "🔍 Running golangci-lint..."
+    golangci-lint run --timeout=5m
+else
+    echo "⚠️ golangci-lint not installed, skipping advanced linting"
+    echo "Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+fi
+
+# Run tests
+echo "🧪 Running tests..."
+go test -race -short ./...
+
+# Check test coverage
+echo "📊 Checking test coverage..."
+go test -coverprofile=coverage.out ./...
+COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+echo "Current test coverage: ${COVERAGE}%"
+
+# Check if coverage meets minimum requirement
+REQUIRED_COVERAGE=78
+if (( $(echo "$COVERAGE < $REQUIRED_COVERAGE" | bc -l) )); then
+    echo "❌ Test coverage is below ${REQUIRED_COVERAGE}% (current: ${COVERAGE}%)"
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+echo "✅ Test coverage: ${COVERAGE}% (≥${REQUIRED_COVERAGE}%)"

@@ -263,156 +263,119 @@ func TestFranchiseIntentionRepository_Delete(t *testing.T) {
 	}
 }
 
-func TestFranchiseIntentionRepository_GetPaginated(t *testing.T) {
-	db := setupFranchiseTestDB(t)
-	repo := NewFranchiseIntentionRepository(db)
-
-	// Create multiple test franchise intentions with different statuses
+// Helper function to create test data
+func createTestFranchiseIntentions(t *testing.T, repo *FranchiseIntentionRepository) {
 	memberID := "member-paginate"
 
-	intention1 := &models.FranchiseIntention{
-		ID:               "paginate-1",
-		MemberID:         memberID,
-		ContactName:      "张三",
-		ContactPhone:     "13800138000",
-		IntendedLocation: "北京市",
-		Status:           "Pending",
-		CreatedAt:        time.Now().Add(-2 * time.Hour),
-		UpdatedAt:        time.Now().Add(-2 * time.Hour),
+	intentions := []*models.FranchiseIntention{
+		{
+			ID:               "paginate-1",
+			MemberID:         memberID,
+			ContactName:      "张三",
+			ContactPhone:     "13800138000",
+			IntendedLocation: "北京市",
+			Status:           "Pending",
+			CreatedAt:        time.Now().Add(-2 * time.Hour),
+			UpdatedAt:        time.Now().Add(-2 * time.Hour),
+		},
+		{
+			ID:               "paginate-2",
+			MemberID:         memberID,
+			ContactName:      "李四",
+			ContactPhone:     "13900139000",
+			IntendedLocation: "上海市",
+			Status:           "Approved",
+			CreatedAt:        time.Now().Add(-1 * time.Hour),
+			UpdatedAt:        time.Now().Add(-1 * time.Hour),
+		},
+		{
+			ID:               "paginate-3",
+			MemberID:         memberID,
+			ContactName:      "王五",
+			ContactPhone:     "13700137000",
+			IntendedLocation: "深圳市",
+			Status:           "Rejected",
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
 	}
 
-	intention2 := &models.FranchiseIntention{
-		ID:               "paginate-2",
-		MemberID:         memberID,
-		ContactName:      "李四",
-		ContactPhone:     "13900139000",
-		IntendedLocation: "上海市",
-		Status:           "Approved",
-		CreatedAt:        time.Now().Add(-1 * time.Hour),
-		UpdatedAt:        time.Now().Add(-1 * time.Hour),
+	for _, intention := range intentions {
+		err := repo.Create(intention)
+		if err != nil {
+			t.Fatalf("failed to create intention %s: %v", intention.ID, err)
+		}
 	}
+}
 
-	intention3 := &models.FranchiseIntention{
-		ID:               "paginate-3",
-		MemberID:         memberID,
-		ContactName:      "王五",
-		ContactPhone:     "13700137000",
-		IntendedLocation: "深圳市",
-		Status:           "Rejected",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-	}
+func TestFranchiseIntentionRepository_GetPaginated_BasicPagination(t *testing.T) {
+	db := setupFranchiseTestDB(t)
+	repo := NewFranchiseIntentionRepository(db)
+	createTestFranchiseIntentions(t, repo)
 
-	// Create all test data
-	err := repo.Create(intention1)
-	if err != nil {
-		t.Fatalf("failed to create intention1: %v", err)
-	}
-
-	err = repo.Create(intention2)
-	if err != nil {
-		t.Fatalf("failed to create intention2: %v", err)
-	}
-
-	err = repo.Create(intention3)
-	if err != nil {
-		t.Fatalf("failed to create intention3: %v", err)
-	}
-
-	// Test paginated retrieval - all statuses
+	// Test basic retrieval
 	intentions, total, err := repo.GetPaginated(0, 10, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
-	if total != 3 {
-		t.Errorf("expected total 3, got %d", total)
+	if total != 3 || len(intentions) != 3 {
+		t.Errorf("expected total=3 and len=3, got total=%d, len=%d", total, len(intentions))
 	}
-
-	if len(intentions) != 3 {
-		t.Errorf("expected 3 intentions, got %d", len(intentions))
-	}
-
-	// Should be ordered by created_at DESC (newest first)
 	if intentions[0].ID != "paginate-3" {
 		t.Errorf("expected first intention ID 'paginate-3', got '%s'", intentions[0].ID)
 	}
+}
 
-	// Test pagination with limit
-	intentions, total, err = repo.GetPaginated(0, 2, "")
+func TestFranchiseIntentionRepository_GetPaginated_WithLimitAndOffset(t *testing.T) {
+	db := setupFranchiseTestDB(t)
+	repo := NewFranchiseIntentionRepository(db)
+	createTestFranchiseIntentions(t, repo)
+
+	// Test with limit
+	intentions, total, err := repo.GetPaginated(0, 2, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
-	if total != 3 {
-		t.Errorf("expected total 3, got %d", total)
+	if total != 3 || len(intentions) != 2 {
+		t.Errorf("expected total=3 and len=2, got total=%d, len=%d", total, len(intentions))
 	}
 
-	if len(intentions) != 2 {
-		t.Errorf("expected 2 intentions, got %d", len(intentions))
-	}
-
-	// Test pagination with offset
+	// Test with offset
 	intentions, total, err = repo.GetPaginated(1, 2, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
+	if total != 3 || len(intentions) != 2 {
+		t.Errorf("expected total=3 and len=2, got total=%d, len=%d", total, len(intentions))
+	}
+}
 
-	if total != 3 {
-		t.Errorf("expected total 3, got %d", total)
+func TestFranchiseIntentionRepository_GetPaginated_StatusFiltering(t *testing.T) {
+	db := setupFranchiseTestDB(t)
+	repo := NewFranchiseIntentionRepository(db)
+	createTestFranchiseIntentions(t, repo)
+
+	testCases := []struct {
+		status   string
+		expected int
+	}{
+		{"Pending", 1},
+		{"Approved", 1},
+		{"Rejected", 1},
+		{"NonExistent", 0},
 	}
 
-	if len(intentions) != 2 {
-		t.Errorf("expected 2 intentions, got %d", len(intentions))
-	}
-
-	// Test filtering by status - Pending
-	intentions, total, err = repo.GetPaginated(0, 10, "Pending")
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if total != 1 {
-		t.Errorf("expected total 1, got %d", total)
-	}
-
-	if len(intentions) != 1 {
-		t.Errorf("expected 1 intention, got %d", len(intentions))
-	}
-
-	if intentions[0].Status != "Pending" {
-		t.Errorf("expected status 'Pending', got '%s'", intentions[0].Status)
-	}
-
-	// Test filtering by status - Approved
-	intentions, total, err = repo.GetPaginated(0, 10, "Approved")
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if total != 1 {
-		t.Errorf("expected total 1, got %d", total)
-	}
-
-	if len(intentions) != 1 {
-		t.Errorf("expected 1 intention, got %d", len(intentions))
-	}
-
-	if intentions[0].Status != "Approved" {
-		t.Errorf("expected status 'Approved', got '%s'", intentions[0].Status)
-	}
-
-	// Test filtering by non-existent status
-	intentions, total, err = repo.GetPaginated(0, 10, "NonExistent")
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if total != 0 {
-		t.Errorf("expected total 0, got %d", total)
-	}
-
-	if len(intentions) != 0 {
-		t.Errorf("expected 0 intentions, got %d", len(intentions))
+	for _, tc := range testCases {
+		intentions, total, err := repo.GetPaginated(0, 10, tc.status)
+		if err != nil {
+			t.Fatalf("expected no error for status %s, got %v", tc.status, err)
+		}
+		if int(total) != tc.expected || len(intentions) != tc.expected {
+			t.Errorf("status %s: expected total=%d and len=%d, got total=%d, len=%d",
+				tc.status, tc.expected, tc.expected, int(total), len(intentions))
+		}
+		if tc.expected > 0 && intentions[0].Status != tc.status {
+			t.Errorf("expected status '%s', got '%s'", tc.status, intentions[0].Status)
+		}
 	}
 }
