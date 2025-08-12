@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -116,7 +117,7 @@ func TestMachineOwnerHandler_GetSales_Success(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON001",
 			PayAmount:     15.50,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -126,7 +127,7 @@ func TestMachineOwnerHandler_GetSales_Success(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON002",
 			PayAmount:     18.00,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 	}
@@ -217,7 +218,7 @@ func TestMachineOwnerHandler_GetSales_WithCustomDate(t *testing.T) {
 		ProductId:     "product-001",
 		OrderNo:       "ON-CUSTOM",
 		PayAmount:     25.00,
-		PaymentStatus: "Paid",
+		PaymentStatus: int(enums.PaymentStatusPaid),
 		PaymentTime:   &customDate,
 	}
 	require.NoError(t, db.Create(&order).Error)
@@ -265,7 +266,7 @@ func TestMachineOwnerHandler_GetSalesStats_Success(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON001",
 			PayAmount:     15.50,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
@@ -275,7 +276,7 @@ func TestMachineOwnerHandler_GetSalesStats_Success(t *testing.T) {
 			ProductId:     "product-001",
 			OrderNo:       "ON002",
 			PayAmount:     18.00,
-			PaymentStatus: "Paid",
+			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 	}

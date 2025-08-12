@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -71,7 +72,7 @@ func (s *MachineOwnerService) GetSales(machineOwnerID string, targetDate time.Ti
 	err := s.db.Table("orders").
 		Select("machine_id, SUM(pay_amount) as total_sales, COUNT(*) as order_count").
 		Where("machine_id IN ? AND payment_status = ? AND payment_time >= ? AND payment_time < ? AND deleted_at IS NULL",
-			machineIDs, "Paid", startDate, endDate).
+			machineIDs, int(enums.PaymentStatusPaid), startDate, endDate).
 		Group("machine_id").
 		Scan(&salesData).Error
 
