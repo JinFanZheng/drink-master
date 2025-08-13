@@ -102,11 +102,20 @@ pre-commit: lint test build ## 预提交完整检查（lint + test + build）
 deploy-check: pre-commit health-check test-api ## 部署前完整验证
 	@echo "🚀 部署检查完成，可以安全部署"
 
+# 系统集成测试 (Issue #15)
+integration-test: ## 运行系统集成测试
+	@echo "🧪 运行系统集成测试..."
+	@./scripts/integration-test.sh
+
+performance-test: ## 运行性能测试  
+	@echo "⚡ 运行性能测试..."
+	@./scripts/performance-test.sh
+
 # 清理
 clean: ## 清理构建文件
 	@echo "🧹 清理构建文件..."
 	rm -f bin/drink-master
-	rm -f coverage.out coverage.html
+	rm -f coverage.out coverage.html integration_coverage.out
 	go clean -testcache
 
 # 开发工具
