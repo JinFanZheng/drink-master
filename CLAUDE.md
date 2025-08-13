@@ -106,15 +106,9 @@ When user mentions these keywords, automatically read the corresponding guide:
 | API设计, 接口 | `docs/PATTERNS/API_DESIGN.md` | API patterns |
 | 错误处理, error | `docs/PATTERNS/ERROR_HANDLING.md` | Error patterns |
 
-## ⚠️ Agent Collaboration Framework (REQUIRED)
+## 🚀 Quick Start Guide
 
-**All Claude agents MUST understand their role and follow the collaboration framework:**
-
-### 🎯 Role Identification
-Before starting ANY task, identify your role based on the work being performed:
-- **Product Agent**: User research, PRD creation, feature validation (🎯)
-- **PM Agent**: Epic management, task coordination, dependency planning (📊)  
-- **Dev Agent**: Code development, technical implementation (💻)
+**Get started in 1 minute with the most common operations:**
 
 ### 📚 Required Reading
 **Quick Start**: `docs/QUICK_START.md` - Get started in 1 minute
@@ -316,28 +310,12 @@ All API requests/responses are validated using Go structs:
 - **Commit Standards**: Strictly follow Conventional Commits format
 - **Issue Linking**: PRs MUST include `Fixes #<issue-id>`
 
-### Role-Specific Workflow Checklists
+### Development Checklist
 
-#### 🎯 Product Agent Checklist
-- [ ] Read `docs/PRODUCT_ONBOARDING.md` for detailed workflow
-- [ ] Create product requirement Issues with `product` label
-- [ ] Output PRD documents to `docs/PRD/<topic>.md`
-- [ ] Define clear DoD and success metrics
-- [ ] Participate in feature validation and acceptance
-
-#### 📊 PM Agent Checklist  
-- [ ] Read `docs/PM_ONBOARDING.md` for detailed workflow
-- [ ] Create Epic Issues based on Product PRDs
-- [ ] Use `docs/TASK_DEPENDENCY_PLANNING.md` for dependency analysis
-- [ ] Break down Epics into specific development tasks
-- [ ] Coordinate dev resources and track progress
-
-#### 💻 Dev Agent Checklist
-- [ ] Read `docs/AGENT_ONBOARDING.md` for detailed workflow
 - [ ] **切换主分支并拉取最新代码** (`git checkout main && git pull`)
 - [ ] **验证工作目录干净** (`git status`)
 - [ ] Review and understand Issue requirements
-- [ ] Check dependencies using `docs/TASK_DEPENDENCY_PLANNING.md`
+- [ ] Check dependencies using `docs/WORKFLOWS/TASK_PARALLEL.md` if complex task
 - [ ] Create feature branch (基于最新main分支)
 - [ ] Use TodoWrite to plan development tasks
 - [ ] Implement with real-time progress updates
@@ -404,71 +382,61 @@ For API development without database dependencies:
 - Mock data structure matches production schemas
 - Supports all CRUD operations with in-memory storage
 
-## Team Collaboration Guidelines
+## GitHub Operations
 
-### Agent Collaboration Framework
-**Follow the structured collaboration model defined in `docs/ROLES_COLLABORATION.md`:**
+### Essential Commands
 
-#### 🔄 Standard Workflow
-1. **Product Agent** → User research → PRD creation → Success metrics
-2. **PM Agent** → Epic creation → Task breakdown → Dependency planning  
-3. **Dev Agent** → Code implementation → Quality assurance → PR creation
-4. **All Agents** → Feature validation → Release coordination → Data analysis
-
-#### 🚫 Collaboration Boundaries
-- **Don't duplicate**: Each role has specific responsibilities, avoid overlap
-- **Don't skip steps**: Follow the sequential workflow stages
-- **Don't work in isolation**: Use designated communication and handoff points
-
-### GitHub Operations (gh commands)
-**Essential commands for each role:**
-
-#### Product Agent Commands
+#### Task Management
 ```bash
-# Create product requirement
-gh issue create --title "[Product] Feature Name" --label "product,priority-high" --body-file prd-template.md
-
-# Validate completion  
-gh issue comment <issue-id> --body "✅ Product validation passed"
-```
-
-#### PM Agent Commands  
-```bash
-# Create Epic from PRD
-gh issue create --title "[Epic] Feature Name" --label "epic,backend" --milestone "M1"
-
-# Track progress
-gh issue list --label "epic" --state open
-gh project item-list <project-id>
-```
-
-#### Dev Agent Commands
-```bash
-# Start development (following AGENT_ONBOARDING.md)
+# View issue details
 gh issue view <issue-id>
 gh issue edit <issue-id> --add-label "in-progress"
 
+# Create Epic or requirement
+gh issue create --title "[Epic] Feature Name" --label "epic,backend"
+
+# Track progress
+gh issue list --label "epic" --state open
+gh issue list --label "blocked" --state open
+```
+
+#### PR Management
+```bash
 # Create PR
 gh pr create --title "feat: feature name" --body "Fixes #<issue-id>"
+
+# Review PR
+gh pr view 123
+gh pr checks 123
+gh pr diff 123
+gh pr review 123 --approve
+gh pr merge 123 --squash
 ```
 
 ### PR Merge Standards
-Follow automated validation flow from `docs/AGENT_PR_MERGE_GUIDE.md`:
+Follow validation flow from `docs/WORKFLOWS/PR_MERGE.md`:
 - **Required checks**: CI/CD status, merge conflicts, Issue linking, functional validation
 - **Risk classification**: Low risk (auto-merge), Medium risk (extra validation), High risk (human review)
 - **Emergency fixes**: Tagged `urgent`/`hotfix` can bypass certain checks
 
 ### Documentation Structure
-All agents should understand the documentation organization:
 ```
 docs/
-├── README.md                    # 📋 Documentation index
-├── ROLES_COLLABORATION.md       # 🎯 Core collaboration guide  
-├── [ROLE]_ONBOARDING.md        # 📚 Role-specific workflows
+├── QUICK_START.md              # 🚀 1-minute getting started
+├── README.md                   # 📋 Documentation index
+├── WORKFLOWS/                  # 📚 Core workflows
+│   ├── DEVELOPMENT.md         # Development workflow
+│   ├── REQUIREMENT.md         # Requirement analysis
+│   ├── PR_MERGE.md           # PR review & merge
+│   └── TASK_PARALLEL.md      # Parallel task handling
+├── EMERGENCY/                  # 🚨 Emergency procedures
+│   ├── HOTFIX.md             # Hotfix process
+│   └── ROLLBACK.md           # Rollback guide
+├── PATTERNS/                   # 🔧 Common patterns
+│   ├── API_DESIGN.md         # API design patterns
+│   └── ERROR_HANDLING.md     # Error handling
 ├── PRD/                        # 📄 Product requirements
-├── Sprint/                     # 📊 Sprint planning
-├── Guides/                     # 📚 Technical guides
-└── Operations/                 # ⚙️ Ops documentation
+└── archive/                    # 📦 Archived guides
 ```
 
 ## Database Configuration
@@ -626,12 +594,14 @@ Claude Actions:
 4. Create urgent PR with "hotfix" label
 ```
 
-### Role-Based Entry Points
-| Role | Start Here | Key Documents | Main Output |
-|------|------------|---------------|-------------|
-| 🎯 Product | `docs/PRODUCT_ONBOARDING.md` | User research, PRD templates | `docs/PRD/*.md` |
-| 📊 PM | `docs/PM_ONBOARDING.md` | Epic management, dependency planning | GitHub Epics + Issues |
-| 💻 Dev | `docs/AGENT_ONBOARDING.md` | Code quality, branch workflow | Code + PRs |
+### Workflow Entry Points
+| Task Type | Start Here | Purpose |
+|-----------|------------|----------|
+| 🚀 Quick Start | `docs/QUICK_START.md` | 1-minute guide to common tasks |
+| 💻 Development | `docs/WORKFLOWS/DEVELOPMENT.md` | Complete dev workflow |
+| 📋 Requirements | `docs/WORKFLOWS/REQUIREMENT.md` | Requirement analysis & PRD |
+| 🔄 PR Review | `docs/WORKFLOWS/PR_MERGE.md` | PR validation & merge |
+| ⚡ Parallel Tasks | `docs/WORKFLOWS/TASK_PARALLEL.md` | Dependency & parallel execution |
 
 ### Common GitHub Commands
 ```bash
@@ -639,7 +609,7 @@ Claude Actions:
 gh issue list --label "epic" --state open
 gh issue list --label "blocked" --state open
 
-# Dependency checking (use with TASK_DEPENDENCY_PLANNING.md)
+# Dependency checking (use with TASK_PARALLEL.md)
 gh issue view <issue-id> --json body -q .body | grep -E "- \[ \] #[0-9]+"
 
 # Quality gates (Dev Agent)  
@@ -651,17 +621,18 @@ gh pr create --title "feat: description" --body "Fixes #<issue-id>"
 ```
 
 ### Documentation Navigation
-- 🎯 **Start**: `docs/README.md` - Complete documentation index
-- 🤝 **Collaboration**: `docs/ROLES_COLLABORATION.md` - Role boundaries and workflows  
-- 🔧 **Methods**: `docs/TASK_DEPENDENCY_PLANNING.md` - DAG dependency analysis
-- 📋 **Process**: `docs/AGENT_PR_MERGE_GUIDE.md` - PR review and merge standards
+- 🚀 **Quick Start**: `docs/QUICK_START.md` - 1-minute guide
+- 📋 **Index**: `docs/README.md` - Complete documentation index
+- 🔧 **Workflows**: `docs/WORKFLOWS/` - All core workflows
+- 🚨 **Emergency**: `docs/EMERGENCY/` - Hotfix and rollback procedures
+- 🎨 **Patterns**: `docs/PATTERNS/` - Common design patterns
 
 ### Success Indicators
-- ✅ **Clear role identification** before starting any task
-- ✅ **Proper document structure** following the new organization
+- ✅ **Use correct workflow guide** for the task at hand
+- ✅ **Follow streamlined processes** in WORKFLOWS/ directory
 - ✅ **GitHub operations** using recommended gh commands
 - ✅ **Quality standards** meeting all validation checkpoints
-- ✅ **Collaboration boundaries** respecting role-specific responsibilities
+- ✅ **TodoWrite usage** for task planning and tracking
 
 ## 📌 Hook System Overview
 
@@ -680,6 +651,6 @@ The project uses automated hooks to ensure code quality at key checkpoints:
 
 ---
 
-**Follow the Agent Collaboration Framework for efficient teamwork!** 🤝
+**Follow the streamlined workflows for efficient development!** 🚀
 
 *CLAUDE.md last updated: 2025-08-13*
