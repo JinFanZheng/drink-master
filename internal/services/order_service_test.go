@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/enums"
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 func TestNewOrderService(t *testing.T) {
@@ -231,4 +234,98 @@ func TestOrderService_EnumAPIConversion(t *testing.T) {
 	// 测试无效值的默认行为
 	defaultStatus := enums.FromAPIString("Invalid")
 	assert.Equal(t, enums.BusinessStatusOpen, defaultStatus)
+}
+
+// Mock repository for testing GetByOrderNo
+type mockOrderRepository struct {
+	mock.Mock
+}
+
+func (m *mockOrderRepository) GetByOrderNo(orderNo string) (*models.Order, error) {
+	args := m.Called(orderNo)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Order), args.Error(1)
+}
+
+func (m *mockOrderRepository) GetByID(id string) (*models.Order, error) {
+	args := m.Called(id)
+	return args.Get(0).(*models.Order), args.Error(1)
+}
+
+func (m *mockOrderRepository) GetByMemberPaging(memberID string, pageIndex, pageSize int) ([]models.Order, int64, error) {
+	args := m.Called(memberID, pageIndex, pageSize)
+	return args.Get(0).([]models.Order), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *mockOrderRepository) Create(order *models.Order) error {
+	args := m.Called(order)
+	return args.Error(0)
+}
+
+func (m *mockOrderRepository) Update(order *models.Order) error {
+	args := m.Called(order)
+	return args.Error(0)
+}
+
+func (m *mockOrderRepository) Delete(id string) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
+// Test GetByOrderNo method
+func TestOrderService_GetByOrderNo(t *testing.T) {
+	mockRepo := &mockOrderRepository{}
+	service := &orderService{
+		orderRepo: mockRepo,
+	}
+
+	// Test successful case
+	order := &models.Order{
+		ID:      "order123",
+		OrderNo: "ORD20250813001",
+	}
+	mockRepo.On("GetByOrderNo", "ORD20250813001").Return(order, nil)
+
+	result, err := service.GetByOrderNo("ORD20250813001")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, "order123", result.ID)
+	assert.Equal(t, "ORD20250813001", result.OrderNo)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestOrderService_GetByOrderNo_NotFound(t *testing.T) {
+	mockRepo := &mockOrderRepository{}
+	service := &orderService{
+		orderRepo: mockRepo,
+	}
+
+	// Test order not found case
+	mockRepo.On("GetByOrderNo", "NON_EXISTENT_ORDER").Return(nil, gorm.ErrRecordNotFound)
+
+	result, err := service.GetByOrderNo("NON_EXISTENT_ORDER")
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestOrderService_GetByOrderNo_DatabaseError(t *testing.T) {
+	mockRepo := &mockOrderRepository{}
+	service := &orderService{
+		orderRepo: mockRepo,
+	}
+
+	// Test database error case
+	mockRepo.On("GetByOrderNo", "ORD20250813001").Return(nil, assert.AnError)
+
+	result, err := service.GetByOrderNo("ORD20250813001")
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "根据订单号获取订单失败")
+
+	mockRepo.AssertExpectations(t)
 }

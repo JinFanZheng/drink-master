@@ -18,6 +18,7 @@ import (
 type OrderService interface {
 	GetMemberOrderPaging(request contracts.GetMemberOrderPagingRequest) (*contracts.OrderPagingResponse, error)
 	GetByID(id string) (*contracts.GetOrderByIdResponse, error)
+	GetByOrderNo(orderNo string) (*models.Order, error)
 	Create(request contracts.CreateOrderRequest) (*contracts.CreateOrderResponse, error)
 	Refund(request contracts.RefundOrderRequest) (*contracts.RefundOrderResponse, error)
 }
@@ -297,6 +298,18 @@ func (s *orderService) Refund(request contracts.RefundOrderRequest) (*contracts.
 		RefundAmount: decimal.NewFromFloat(order.RefundAmount),
 		Message:      "退款成功",
 	}, nil
+}
+
+// GetByOrderNo 根据订单号获取订单
+func (s *orderService) GetByOrderNo(orderNo string) (*models.Order, error) {
+	order, err := s.orderRepo.GetByOrderNo(orderNo)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("根据订单号获取订单失败: %w", err)
+	}
+	return order, nil
 }
 
 // generateOrderNo 生成订单号

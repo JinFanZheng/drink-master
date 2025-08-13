@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/models"
 )
 
 // Mock OrderService for testing
@@ -37,6 +38,14 @@ func (m *mockOrderService) GetByID(id string) (*contracts.GetOrderByIdResponse, 
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*contracts.GetOrderByIdResponse), args.Error(1)
+}
+
+func (m *mockOrderService) GetByOrderNo(orderNo string) (*models.Order, error) {
+	args := m.Called(orderNo)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Order), args.Error(1)
 }
 
 func (m *mockOrderService) Create(request contracts.CreateOrderRequest) (*contracts.CreateOrderResponse, error) {

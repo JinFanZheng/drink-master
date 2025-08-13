@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/config"
@@ -110,8 +111,12 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		machineOwner.GET("/sales/stats", machineOwnerHandler.GetSalesStats)
 	}
 
-	// 回调接口 (无需认证)
-	callbackHandler := handlers.NewCallbackHandler(db)
+	// 基于CallbackController的路由 (无需认证)
+	// 初始化回调服务所需的依赖
+	paymentService := services.NewPaymentService(db)
+	logger := logrus.New()
+	logger.SetLevel(logrus.InfoLevel)
+	callbackHandler := handlers.NewCallbackHandler(orderService, paymentService, logger)
 	router.POST("/api/Callback/PaymentResult", callbackHandler.PaymentResult)
 
 	return router

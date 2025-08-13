@@ -109,6 +109,19 @@ type PaymentCallbackResponse struct {
 	Message   string `json:"message" example:"回调处理成功"`
 }
 
+// PaymentCallbackResultRequest 支付结果回调请求（基于VendingMachine.MobileAPI）
+type PaymentCallbackResultRequest struct {
+	ChannelCode    string    `json:"channelCode" validate:"required"`    // 渠道编码
+	TransAmt       int       `json:"transAmt" validate:"required,gt=0"`  // 订单金额(分)
+	ReturnAmt      int       `json:"returnAmt"`                          // 返还金额(分)
+	OrderNo        string    `json:"orderNo" validate:"required"`        // 订单号
+	OrderInfo      string    `json:"orderInfo"`                          // 订单信息
+	ModeOfPayment  int       `json:"modeOfPayment" validate:"required"`  // 支付方式
+	ChannelOrderNo string    `json:"channelOrderNo" validate:"required"` // 渠道订单号
+	PaymentTime    time.Time `json:"paymentTime" validate:"required"`    // 支付时间
+	CallbackType   string    `json:"callbackType" validate:"required"`   // 回调类型
+}
+
 // 支付相关常量
 const (
 	// 支付渠道
