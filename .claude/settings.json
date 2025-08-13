@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "name": "development_workflow_validation",
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/validate-development-workflow.sh",
+            "description": "强制执行开发流程验收标准"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "name": "pr_creation_validation",
+        "matcher": "Bash.*pr create",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/validate-pr-readiness.sh", 
+            "description": "PR创建前验证所有质量检查完成"
+          }
+        ]
+      },
+      {
+        "name": "commit_validation", 
+        "matcher": "Bash.*git commit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/validate-commit-readiness.sh",
+            "description": "提交前验证代码质量和测试覆盖率"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "name": "task_completion_check",
+        "matcher": ".*完成.*|.*done.*|.*finish.*",
+        "hooks": [
+          {
+            "type": "command", 
+            "command": ".claude/scripts/check-task-completion.sh",
+            "description": "检查任务是否真正完成所有验收标准"
+          }
+        ]
+      }
+    ]
+  }
+}
