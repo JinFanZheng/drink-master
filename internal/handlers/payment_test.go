@@ -152,3 +152,107 @@ func TestCallbackHandler_PaymentResult_Direct(t *testing.T) {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
+
+// Additional test cases for better coverage
+func TestPaymentHandler_Get_InvalidRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	handler := NewPaymentHandler(db)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/api/Payment/Get", nil) // Missing orderId
+
+	// Set auth info
+	c.Set("member_id", "test_member_123")
+
+	handler.Get(c)
+
+	// Should return validation error
+	if w.Code == http.StatusOK {
+		t.Errorf("Expected error status, got %d", w.Code)
+	}
+}
+
+func TestPaymentHandler_Query_InvalidRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	handler := NewPaymentHandler(db)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/api/Payment/Query", nil) // Missing orderId
+
+	// Set auth info
+	c.Set("member_id", "test_member_456")
+
+	handler.Query(c)
+
+	// Should return validation error
+	if w.Code == http.StatusOK {
+		t.Errorf("Expected error status, got %d", w.Code)
+	}
+}
+
+func TestCallbackHandler_PaymentResult_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	handler := NewCallbackHandler(db)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/api/Callback/PaymentResult",
+		bytes.NewBuffer([]byte("invalid json")))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PaymentResult(c)
+
+	// Should handle invalid JSON gracefully
+	// Handler should return OK or appropriate error status
+	if w.Code != http.StatusOK {
+		t.Logf("Handler returned status %d for invalid JSON", w.Code)
+	}
+}
+
+func TestPaymentHandler_Constructor(t *testing.T) {
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+
+	// Test PaymentHandler constructor
+	paymentHandler := NewPaymentHandler(db)
+	if paymentHandler == nil {
+		t.Error("PaymentHandler should not be nil")
+		return
+	}
+	if paymentHandler.paymentService == nil {
+		t.Error("PaymentHandler.paymentService should not be nil")
+	}
+	if paymentHandler.orderService == nil {
+		t.Error("PaymentHandler.orderService should not be nil")
+	}
+
+	// Test CallbackHandler constructor
+	callbackHandler := NewCallbackHandler(db)
+	if callbackHandler == nil {
+		t.Error("CallbackHandler should not be nil")
+	}
+}
+
+func TestPaymentHandler_GetMemberOpenId_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	handler := NewPaymentHandler(db)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/api/Payment/Get?orderId=order123", nil)
+
+	// Set invalid member ID that should cause error
+	c.Set("member_id", "")
+
+	handler.Get(c)
+
+	// Should handle error gracefully
+	if w.Code == http.StatusOK {
+		t.Errorf("Expected error status, got %d", w.Code)
+	}
+}

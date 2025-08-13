@@ -17,6 +17,8 @@
 **所有开发任务必须严格按照以下流程执行，无例外：**
 
 ### 第1步：任务开始前准备 (MANDATORY)
+
+#### 情况A：全新任务开始（当前在main分支）
 ```bash
 # 必须按顺序执行：
 git checkout main && git pull origin main           # 切换主分支并拉取最新代码
@@ -28,6 +30,21 @@ git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<sho
 cd ../drink-master-<issue-id>-<short-name>          # 切换到worktree目录
 make lint && make test && make build  # 基础质量检查
 ```
+
+#### 情况B：任务恢复（当前已在feature分支或worktree目录）
+```bash
+# 检查当前状态
+git branch --show-current              # 如果显示feat/<issue-id>-*，说明已在正确分支
+pwd                                    # 确认在正确的worktree目录
+gh issue view <issue-id>               # 查看任务详情（确认任务状态）
+git status                             # 确认工作目录状态
+# 如果一切正常，直接跳到第2步任务规划
+```
+
+**⚠️ 分支判断逻辑：**
+- **如果 `git branch --show-current` 显示 `main`**：执行情况A的完整流程
+- **如果显示 `feat/<issue-id>-*`**：执行情况B的简化检查，然后直接进入第2步
+- **如果显示其他分支名**：必须先完成当前任务或切换回main分支重新开始
 
 **⚠️ 重要约束：**
 - **绝对禁止**在非main分支基础上创建新分支
@@ -124,6 +141,8 @@ git remote prune origin              # 清理远程跟踪分支
 **违反流程的后果：PR 将被拒绝，需要重新开始。**
 
 ### 开发工作流检查清单 ✅
+
+#### 新任务开始（main分支）：
 - [ ] **切换主分支并拉取最新代码** (`git checkout main && git pull`)
 - [ ] **验证工作目录干净** (`git status`)
 - [ ] 查看并理解 Issue 需求
@@ -131,6 +150,14 @@ git remote prune origin              # 清理远程跟踪分支
 - [ ] **创建worktree工作目录**（`git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<short-name>`）
 - [ ] **切换到worktree目录** (`cd ../drink-master-<issue-id>-<short-name>`)
 - [ ] 运行基础质量检查
+
+#### 任务恢复（feature分支）：
+- [ ] **确认当前分支正确** (`git branch --show-current` 显示 feat/<issue-id>-*)
+- [ ] **确认工作目录正确** (`pwd` 显示正确的worktree路径)
+- [ ] **检查工作目录状态** (`git status`)
+- [ ] 查看并理解 Issue 需求
+
+#### 通用步骤：
 - [ ] **使用 TodoWrite 规划任务**
 - [ ] 实施开发并实时更新进度
 - [ ] 最终质量检查 (lint + test + build)
@@ -323,24 +350,61 @@ git worktree add ../drink-master-222-feature-b -b feat/222-feature-b
 
 ## 8. 流程合规性检查
 
-在开始任何新任务前，**必须**完成以下合规性检查：
+在开始任何任务前，**必须**完成以下合规性检查：
+
+### 8.1 智能分支检查脚本
 
 ```bash
-# 完整的任务启动检查脚本
+#!/bin/bash
 echo "=== 任务启动合规性检查 ==="
-echo "1. 检查当前分支..."
-git branch --show-current  # 应该显示 main
 
-echo "2. 检查工作目录状态..."
-git status  # 应该显示 "working tree clean"
+# 检查当前分支
+CURRENT_BRANCH=$(git branch --show-current)
+echo "1. 当前分支: $CURRENT_BRANCH"
 
-echo "3. 更新本地主分支..."
-git pull origin main  # 应该显示 "Already up to date" 或成功更新
-
-echo "4. 确认无本地未推送分支..."
-git branch --no-merged main  # 不应该有输出
-
-echo "✅ 如果以上检查全部通过，可以开始新任务"
+if [ "$CURRENT_BRANCH" = "main" ]; then
+    echo "📍 情况A：在main分支，执行新任务流程"
+    
+    echo "2. 检查工作目录状态..."
+    git status  # 应该显示 "working tree clean"
+    
+    echo "3. 更新本地主分支..."
+    git pull origin main  # 应该显示 "Already up to date" 或成功更新
+    
+    echo "4. 确认无本地未推送分支..."
+    git branch --no-merged main  # 不应该有输出
+    
+    echo "✅ 可以开始新任务 - 请执行情况A的完整流程"
+    
+elif [[ "$CURRENT_BRANCH" =~ ^feat/[0-9]+-.*$ ]]; then
+    echo "📍 情况B：在feature分支，执行任务恢复流程"
+    
+    echo "2. 检查工作目录状态..."
+    git status
+    
+    echo "3. 确认工作目录位置..."
+    pwd
+    
+    echo "✅ 可以恢复任务 - 请执行情况B的简化检查"
+    
+else
+    echo "❌ 错误：当前在非标准分支 '$CURRENT_BRANCH'"
+    echo "请先完成当前任务或切换到main分支重新开始"
+    exit 1
+fi
 ```
 
-**只有通过所有检查，才能继续执行标准开发流程！**
+### 8.2 手动检查要点
+
+**新任务开始（main分支）**：
+- [ ] 当前分支为 `main`
+- [ ] 工作目录干净
+- [ ] main分支是最新的
+- [ ] 无未合并的本地分支
+
+**任务恢复（feature分支）**：
+- [ ] 分支名符合 `feat/<issue-id>-*` 格式
+- [ ] 在正确的worktree目录中
+- [ ] 工作目录状态合理（可以有未提交更改）
+
+**只有通过相应检查，才能继续执行对应的开发流程！**
