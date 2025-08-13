@@ -102,6 +102,17 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		product.GET("/select", productHandler.GetSelectList)
 	}
 
+	// 基于MaterialSiloController的路由 (物料槽管理)
+	materialSiloHandler := handlers.NewMaterialSiloHandler(db)
+	materialSilo := router.Group("/api/MaterialSilo")
+	materialSilo.Use(middleware.JWTAuth()) // 物料槽管理需要认证
+	{
+		materialSilo.POST("/GetPaging", materialSiloHandler.GetPaging)
+		materialSilo.POST("/UpdateStock", materialSiloHandler.UpdateStock)
+		materialSilo.POST("/UpdateProduct", materialSiloHandler.UpdateProduct)
+		materialSilo.POST("/ToggleSaleStatus", materialSiloHandler.ToggleSaleStatus)
+	}
+
 	// 基于MachineOwnerController的路由 (机主管理功能)
 	machineOwnerHandler := handlers.NewMachineOwnerHandler(db)
 	machineOwner := router.Group("/api/machine-owners")

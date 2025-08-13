@@ -58,6 +58,14 @@ type MockProductRepository struct {
 	mock.Mock
 }
 
+func (m *MockProductRepository) GetByID(id string) (*models.Product, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Product), args.Error(1)
+}
+
 func (m *MockProductRepository) GetMachineProducts(machineID string) ([]*models.MachineProductPrice, error) {
 	args := m.Called(machineID)
 	return args.Get(0).([]*models.MachineProductPrice), args.Error(1)
