@@ -125,17 +125,75 @@ git add . && git commit -m "feat: ..."  # Conventional Commits 格式
   - **原因3**：缺少必要的import
     - **解决**：goimports会自动添加缺失的import
 
-### 第5步：PR 创建和清理 (MANDATORY)
+### 第5步：PR 创建和 CI/CD 验证 (MANDATORY)
 ```bash
 # 在worktree目录中推送分支
 git push -u origin feat/<issue-id>-<short-name>
 gh pr create --title "..." --body "Fixes #<issue-id> ..."
 
+# 【关键新增】监控 GitHub Actions 状态并确保全部通过
+echo "正在等待CI/CD检查完成..."
+
+# 循环检查CI/CD状态，直到全部通过
+TIMEOUT=1800  # 30分钟超时
+START_TIME=$(date +%s)
+
+while true; do
+    # 检查超时
+    CURRENT_TIME=$(date +%s)
+    if [ $((CURRENT_TIME - START_TIME)) -gt $TIMEOUT ]; then
+        echo "⚠️ CI/CD检查超时，请手动检查GitHub Actions状态"
+        gh pr view --web  # 打开PR页面手动查看
+        break
+    fi
+    
+    # 获取CI/CD状态
+    STATUS=$(gh pr view --json statusCheckRollup -q '.statusCheckRollup[0].conclusion // "PENDING"')
+    echo "当前CI/CD状态: $STATUS"
+    
+    if [ "$STATUS" = "SUCCESS" ]; then
+        echo "✅ 所有CI/CD检查通过！可以进行code review和合并。"
+        break
+    elif [ "$STATUS" = "FAILURE" ]; then
+        echo "❌ CI/CD检查失败，开始分析和修复..."
+        
+        # 查看失败的具体原因
+        gh run list --branch feat/<issue-id>-<short-name> --limit 1
+        echo "查看失败日志："
+        LATEST_RUN=$(gh run list --branch feat/<issue-id>-<short-name> --limit 1 --json databaseId -q '.[0].databaseId')
+        gh run view $LATEST_RUN --log | grep -E "Error|FAIL|error" | head -20
+        
+        echo "常见修复方法："
+        echo "1. 代码格式化问题 - 运行: go fmt ./... && find . -name '*.go' -not -path './vendor/*' -exec goimports -w {} \\;"
+        echo "2. 测试失败 - 运行: make test 本地重现并修复"
+        echo "3. 构建失败 - 运行: make build 本地重现并修复"
+        echo "4. Lint检查失败 - 运行: make lint 本地重现并修复"
+        echo "5. 测试覆盖率不足 - 运行: go tool cover -func=coverage.out | tail -1 检查覆盖率"
+        
+        echo "请根据错误信息修复问题，然后运行以下命令提交修复："
+        echo "git add . && git commit -m \"fix: resolve CI/CD issues\" && git push"
+        echo ""
+        echo "修复后，脚本将继续监控CI/CD状态..."
+        
+        # 等待用户修复并推送
+        while [ "$(gh pr view --json statusCheckRollup -q '.statusCheckRollup[0].conclusion // "PENDING"')" = "FAILURE" ]; do
+            sleep 60  # 每分钟检查一次
+            echo "等待修复提交..."
+        done
+        
+    else
+        echo "⏳ CI/CD检查进行中，等待60秒后重新检查..."
+        sleep 60
+    fi
+done
+
 # PR合并后，清理worktree和本地分支
-cd ../drink-master                    # 回到主工作目录
-git worktree remove ../drink-master-<issue-id>-<short-name>  # 删除worktree
-git branch -d feat/<issue-id>-<short-name>                   # 删除本地分支
-git remote prune origin              # 清理远程跟踪分支
+echo "PR准备就绪，等待code review和合并..."
+echo "合并后请运行以下清理命令："
+echo "cd ../drink-master"
+echo "git worktree remove ../drink-master-<issue-id>-<short-name>"
+echo "git branch -d feat/<issue-id>-<short-name>"
+echo "git remote prune origin"
 ```
 
 **违反流程的后果：PR 将被拒绝，需要重新开始。**
@@ -167,6 +225,9 @@ git remote prune origin              # 清理远程跟踪分支
 - [ ] **验证import格式正确** (`goimports -d` 命令应无输出)
 - [ ] 提交代码并创建 PR
 - [ ] 确保 PR 包含 `Fixes #<issue-id>`
+- [ ] **监控 GitHub Actions 状态** (等待所有CI/CD检查通过)
+- [ ] **如CI/CD失败，分析日志并修复问题** (格式化、测试、构建、lint等)
+- [ ] **确认所有检查状态为SUCCESS** (才能进行code review)
 - [ ] **PR合并后清理worktree** (`git worktree remove` 和 `git branch -d`)
 
 ## 2.1 状态与自动化约定
@@ -281,6 +342,8 @@ git commit -m "resolve: merge conflicts with main"
 - [ ] **分支基于最新main**：确认分支是从最新main创建
 - [ ] **无未追踪文件**：`git status` 显示工作目录干净
 - [ ] **提交信息规范**：遵循 Conventional Commits 格式
+- [ ] **GitHub Actions 全部通过**：确认所有CI/CD检查状态为SUCCESS
+- [ ] **CI/CD 失败时及时修复**：分析日志，修复问题，重新提交直到通过
 
 ## 5. 验收标准（MVP DoD 摘要）
 - API响应时间 < 500ms，错误处理完整
