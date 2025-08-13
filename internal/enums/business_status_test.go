@@ -90,3 +90,48 @@ func TestBusinessStatus_IsValid(t *testing.T) {
 		})
 	}
 }
+
+func TestBusinessStatus_ToAPIString(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   BusinessStatus
+		expected string
+	}{
+		{"Open status to API", BusinessStatusOpen, "Open"},
+		{"Close status to API", BusinessStatusClose, "Close"},
+		{"Offline status to API", BusinessStatusOffline, "Offline"},
+		{"Invalid status to API", BusinessStatus(999), "Unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.status.ToAPIString()
+			if result != tt.expected {
+				t.Errorf("Expected %d.ToAPIString() to be '%s', but got '%s'", tt.status, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestFromAPIString(t *testing.T) {
+	tests := []struct {
+		name     string
+		apiStr   string
+		expected BusinessStatus
+	}{
+		{"Open from API", "Open", BusinessStatusOpen},
+		{"Close from API", "Close", BusinessStatusClose},
+		{"Offline from API", "Offline", BusinessStatusOffline},
+		{"Invalid from API", "Invalid", BusinessStatusOpen}, // defaults to Open
+		{"Empty string from API", "", BusinessStatusOpen},   // defaults to Open
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FromAPIString(tt.apiStr)
+			if result != tt.expected {
+				t.Errorf("Expected FromAPIString('%s') to be %d, but got %d", tt.apiStr, tt.expected, result)
+			}
+		})
+	}
+}

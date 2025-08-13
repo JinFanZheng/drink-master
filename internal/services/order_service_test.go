@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ddteam/drink-master/internal/contracts"
+	"github.com/ddteam/drink-master/internal/enums"
 )
 
 func TestNewOrderService(t *testing.T) {
@@ -153,4 +154,81 @@ func TestOrderService_InternalMethods(t *testing.T) {
 
 	// 至少应该有一个不同的订单号（通常会有多个）
 	assert.GreaterOrEqual(t, len(orderNos), 1, "Should generate at least one unique order number")
+}
+
+// 测试常量检查和基本功能
+func TestOrderService_StatusConstants(t *testing.T) {
+	// 测试PaymentStatus枚举值转换
+	tests := []struct {
+		status   enums.PaymentStatus
+		expected string
+	}{
+		{enums.PaymentStatusWaitPay, "待支付"},
+		{enums.PaymentStatusPaid, "已支付"},
+		{enums.PaymentStatusRefunded, "已退款"},
+	}
+
+	for _, tt := range tests {
+		desc := enums.GetPaymentStatusDesc(tt.status)
+		if desc != tt.expected {
+			t.Errorf("Expected payment status %d to have desc '%s', got '%s'", tt.status, tt.expected, desc)
+		}
+	}
+}
+
+func TestOrderService_MakeStatusConstants(t *testing.T) {
+	// 测试MakeStatus枚举值转换
+	tests := []struct {
+		status   enums.MakeStatus
+		expected string
+	}{
+		{enums.MakeStatusWaitMake, "待制作"},
+		{enums.MakeStatusMaking, "制作中"},
+		{enums.MakeStatusMade, "制作完成"},
+		{enums.MakeStatusMakeFail, "制作失败"},
+	}
+
+	for _, tt := range tests {
+		desc := enums.GetMakeStatusDesc(tt.status)
+		if desc != tt.expected {
+			t.Errorf("Expected make status %d to have desc '%s', got '%s'", tt.status, tt.expected, desc)
+		}
+	}
+}
+
+// 测试枚举状态常量
+func TestOrderService_EnumValueMethods(t *testing.T) {
+	// 测试PaymentStatus的所有方法
+	status := enums.PaymentStatusPaid
+	assert.True(t, status.IsValid(), "PaymentStatusPaid should be valid")
+	assert.Equal(t, "已支付", enums.GetPaymentStatusDesc(status))
+	assert.Equal(t, "已支付", status.String())
+
+	// 测试MakeStatus的所有方法
+	makeStatus := enums.MakeStatusMade
+	assert.True(t, makeStatus.IsValid(), "MakeStatusMade should be valid")
+	assert.Equal(t, "制作完成", enums.GetMakeStatusDesc(makeStatus))
+	assert.Equal(t, "制作完成", makeStatus.String())
+
+	// 测试BusinessStatus的所有方法
+	businessStatus := enums.BusinessStatusOpen
+	assert.True(t, businessStatus.IsValid(), "BusinessStatusOpen should be valid")
+	assert.Equal(t, "营业中", enums.GetBusinessStatusDesc(businessStatus))
+	assert.Equal(t, "营业中", businessStatus.String())
+}
+
+// 测试Enum API转换方法
+func TestOrderService_EnumAPIConversion(t *testing.T) {
+	// 测试BusinessStatus API转换
+	status := enums.BusinessStatusOpen
+	apiStr := status.ToAPIString()
+	assert.Equal(t, "Open", apiStr)
+
+	// 测试反向转换
+	convertedStatus := enums.FromAPIString("Open")
+	assert.Equal(t, enums.BusinessStatusOpen, convertedStatus)
+
+	// 测试无效值的默认行为
+	defaultStatus := enums.FromAPIString("Invalid")
+	assert.Equal(t, enums.BusinessStatusOpen, defaultStatus)
 }
