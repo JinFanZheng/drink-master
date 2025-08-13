@@ -23,29 +23,31 @@ func setupPaymentTestRouter() (*gin.Engine, *PaymentHandler, *CallbackHandler) {
 	}
 
 	// 自动迁移表结构
-	db.AutoMigrate(&models.Member{}, &models.Machine{}, &models.Product{}, &models.Order{})
-	
+	if err := db.AutoMigrate(&models.Member{}, &models.Machine{}, &models.Product{}, &models.Order{}); err != nil {
+		panic("Failed to migrate database")
+	}
+
 	// 创建测试数据
 	member := &models.Member{
-		ID:             "test_member_123",
-		WeChatOpenId:   "test_openid",
-		Nickname:       "测试用户",
+		ID:           "test_member_123",
+		WeChatOpenId: "test_openid",
+		Nickname:     "测试用户",
 	}
 	db.Create(member)
-	
+
 	machine := &models.Machine{
 		ID:        "machine123",
 		MachineNo: "VM001",
 		Name:      "测试咖啡机",
 	}
 	db.Create(machine)
-	
+
 	product := &models.Product{
 		ID:   "product123",
 		Name: "测试饮品",
 	}
 	db.Create(product)
-	
+
 	order := &models.Order{
 		ID:        "order123",
 		OrderNo:   "ORD20240813001",
@@ -103,29 +105,31 @@ func TestPaymentHandler_Get_WithAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	// 自动迁移表结构
-	db.AutoMigrate(&models.Member{}, &models.Machine{}, &models.Product{}, &models.Order{})
-	
+	if err := db.AutoMigrate(&models.Member{}, &models.Machine{}, &models.Product{}, &models.Order{}); err != nil {
+		panic("Failed to migrate database")
+	}
+
 	// 创建测试数据
 	member := &models.Member{
-		ID:             "test_member_123",
-		WeChatOpenId:   "test_openid",
-		Nickname:       "测试用户",
+		ID:           "test_member_123",
+		WeChatOpenId: "test_openid",
+		Nickname:     "测试用户",
 	}
 	db.Create(member)
-	
+
 	machine := &models.Machine{
 		ID:        "machine123",
 		MachineNo: "VM001",
 		Name:      "测试咖啡机",
 	}
 	db.Create(machine)
-	
+
 	product := &models.Product{
 		ID:   "product123",
 		Name: "测试饮品",
 	}
 	db.Create(product)
-	
+
 	order := &models.Order{
 		ID:        "order123",
 		OrderNo:   "ORD20240813001",
@@ -135,7 +139,7 @@ func TestPaymentHandler_Get_WithAuth(t *testing.T) {
 		PayAmount: 10.50,
 	}
 	db.Create(order)
-	
+
 	handler := NewPaymentHandler(db)
 
 	w := httptest.NewRecorder()
