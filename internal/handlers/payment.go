@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -100,7 +101,7 @@ func (h *PaymentHandler) Get(c *gin.Context) {
 		OpenId:      openId,
 		Attach:      "",
 		OrderInfo:   fmt.Sprintf("%s(%s)", order.ProductName, h.getHasCupText(order.HasCup)),
-		TransAmt:    int32(order.PayAmount.Mul(decimal.NewFromInt(100)).IntPart()), // 元转分
+		TransAmt:    safeInt64ToInt32(order.PayAmount.Mul(decimal.NewFromInt(100)).IntPart()), // 元转分
 	}
 
 	// 调用微信支付
@@ -321,4 +322,15 @@ func (h *CallbackHandler) PaymentResult(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// safeInt64ToInt32 安全地将int64转换为int32，防止整数溢出
+func safeInt64ToInt32(value int64) int32 {
+	if value > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if value < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(value)
 }
