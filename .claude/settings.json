@@ -1,51 +1,41 @@
 {
   "hooks": {
-    "PostToolUse": [
-      {
-        "name": "development_workflow_validation",
-        "matcher": "Edit|Write|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/scripts/validate-development-workflow.sh",
-            "description": "强制执行开发流程验收标准"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
-        "name": "pr_creation_validation",
-        "matcher": "Bash.*\\bgh pr create\\b|Bash.*\\bpr create\\b",
+        "matcher": "Bash.*\\bgit\\s+(checkout\\s+-b|worktree\\s+add).*feat/",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/scripts/validate-pr-readiness.sh", 
-            "description": "PR创建前验证所有质量检查完成"
+            "command": ".claude/scripts/validate-branch-creation.sh"
           }
         ]
       },
       {
-        "name": "commit_validation", 
-        "matcher": "Bash.*\\bgit commit\\b",
+        "matcher": "Bash.*\\bgit\\s+commit\\b",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/scripts/validate-commit-readiness.sh",
-            "description": "提交前验证代码质量和测试覆盖率"
+            "command": ".claude/scripts/validate-commit-readiness.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash.*\\bgh\\s+pr\\s+create\\b",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/validate-pr-readiness.sh"
           }
         ]
       }
     ],
-    "UserPromptSubmit": [
+    "PostToolUse": [
       {
-        "name": "task_completion_check",
-        "matcher": "^.*(任务|task).*(已完成|完成了|完成$)|^.*(已完成|完成了|完成$)|^.*\\b(done|finished|completed)\\b.*$",
+        "matcher": "Edit.*internal/contracts|MultiEdit.*internal/contracts",
         "hooks": [
           {
-            "type": "command", 
-            "command": ".claude/scripts/check-task-completion.sh",
-            "description": "检查任务是否真正完成所有验收标准"
+            "type": "command",
+            "command": ".claude/scripts/check-contract-changes.sh"
           }
         ]
       }
