@@ -1,7 +1,15 @@
 package models
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
+)
+
+// MaterialSilo related errors
+var (
+	ErrInvalidStock         = errors.New("invalid stock: stock cannot be negative")
+	ErrStockExceedsCapacity = errors.New("stock exceeds max capacity")
 )
 
 // AutoMigrate runs GORM auto-migration for all models
@@ -14,6 +22,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&MachineProductPrice{},
 		&Order{},
 		&FranchiseIntention{},
+		&MaterialSilo{},
 	)
 }
 
@@ -27,5 +36,6 @@ func AllModels() []interface{} {
 		&MachineProductPrice{},
 		&Order{},
 		&FranchiseIntention{},
+		&MaterialSilo{},
 	}
 }

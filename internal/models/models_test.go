@@ -41,7 +41,7 @@ func TestAllModels(t *testing.T) {
 	}
 
 	// 验证返回的模型数量
-	expectedCount := 7 // Member, MachineOwner, Machine, Product, MachineProductPrice, Order, FranchiseIntention
+	expectedCount := 8 // Member, MachineOwner, Machine, Product, MachineProductPrice, Order, FranchiseIntention, MaterialSilo
 	if len(models) != expectedCount {
 		t.Errorf("Expected %d models, got %d", expectedCount, len(models))
 	}
