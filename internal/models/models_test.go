@@ -213,6 +213,40 @@ func TestMachineModel(t *testing.T) {
 	} else if foundMachine.MachineOwner.Name != owner.Name {
 		t.Errorf("Expected owner name %s, got %s", owner.Name, foundMachine.MachineOwner.Name)
 	}
+
+	// 测试GetBusinessStatusDesc方法
+	statusDesc := foundMachine.GetBusinessStatusDesc()
+	if statusDesc == "" {
+		t.Error("GetBusinessStatusDesc should return non-empty string")
+	}
+}
+
+// 测试Machine的GetBusinessStatusDesc方法
+func TestMachine_GetBusinessStatusDesc(t *testing.T) {
+	tests := []struct {
+		name           string
+		businessStatus enums.BusinessStatus
+		expectedDesc   string
+	}{
+		{"Open status", enums.BusinessStatusOpen, "营业中"},
+		{"Close status", enums.BusinessStatusClose, "暂停营业"},
+		{"Offline status", enums.BusinessStatusOffline, "设备离线"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			machine := Machine{
+				ID:             "test-machine",
+				Name:           "Test Machine",
+				BusinessStatus: tt.businessStatus,
+			}
+
+			result := machine.GetBusinessStatusDesc()
+			if result != tt.expectedDesc {
+				t.Errorf("Expected GetBusinessStatusDesc() to return '%s', got '%s'", tt.expectedDesc, result)
+			}
+		})
+	}
 }
 
 // 测试Product和MachineProductPrice模型
