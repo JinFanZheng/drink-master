@@ -27,8 +27,14 @@ gh issue view <issue-id>              # 查看任务详情
 gh issue edit <issue-id> --add-label "in-progress"  # 标记进行中
 # 使用worktree创建独立工作目录
 git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<short-name>
-cd ../drink-master-<issue-id>-<short-name>          # 切换到worktree目录
-make lint && make test && make build  # 基础质量检查
+
+# ⚠️ Agent操作到此结束，以下操作需要用户手动执行：
+echo "✅ Worktree创建完成！"
+echo "📋 请用户在新终端窗口中执行以下命令："
+echo "cd ../drink-master-<issue-id>-<short-name>"
+echo "make lint && make test && make build  # 基础质量检查"
+echo ""
+echo "🎯 然后Agent将在新的工作目录中继续任务开发"
 ```
 
 #### 情况B：任务恢复（当前已在feature分支或worktree目录）
@@ -201,13 +207,18 @@ echo "git remote prune origin"
 ### 开发工作流检查清单 ✅
 
 #### 新任务开始（main分支）：
+**Agent执行部分：**
 - [ ] **切换主分支并拉取最新代码** (`git checkout main && git pull`)
 - [ ] **验证工作目录干净** (`git status`)
 - [ ] 查看并理解 Issue 需求
 - [ ] 标记 Issue 为 `in-progress` 
 - [ ] **创建worktree工作目录**（`git worktree add ../drink-master-<issue-id>-<short-name> -b feat/<issue-id>-<short-name>`）
-- [ ] **切换到worktree目录** (`cd ../drink-master-<issue-id>-<short-name>`)
-- [ ] 运行基础质量检查
+- [ ] **提示用户手动切换** (输出切换命令和后续操作指导)
+
+**用户执行部分：**
+- [ ] **用户在新终端窗口切换到worktree目录** (`cd ../drink-master-<issue-id>-<short-name>`)
+- [ ] **用户运行基础质量检查** (`make lint && make test && make build`)
+- [ ] **用户通知Agent可以继续** (Agent将在新目录中继续开发)
 
 #### 任务恢复（feature分支）：
 - [ ] **确认当前分支正确** (`git branch --show-current` 显示 feat/<issue-id>-*)
@@ -371,7 +382,7 @@ git checkout -b feat/new-branch  # 这是错误的！
 # ✅ 正确：始终基于最新main分支使用worktree
 git checkout main && git pull origin main
 git worktree add ../drink-master-123-feature-name -b feat/123-feature-name
-cd ../drink-master-123-feature-name
+# 用户手动切换：cd ../drink-master-123-feature-name
 ```
 
 **场景2：工作目录不干净**
