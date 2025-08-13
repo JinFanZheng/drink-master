@@ -285,45 +285,6 @@ func (h *PaymentHandler) getHasCupText(hasCup bool) string {
 	return "不需要杯子"
 }
 
-// CallbackHandler 回调处理器
-type CallbackHandler struct {
-	*BaseHandler
-	paymentService services.PaymentServiceInterface
-}
-
-// NewCallbackHandler 创建回调处理器
-func NewCallbackHandler(db *gorm.DB) *CallbackHandler {
-	return &CallbackHandler{
-		BaseHandler:    NewBaseHandler(db),
-		paymentService: services.NewPaymentService(db),
-	}
-}
-
-// PaymentResult 支付结果回调
-// POST /api/Callback/PaymentResult
-func (h *CallbackHandler) PaymentResult(c *gin.Context) {
-	var req contracts.PaymentCallbackRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "参数错误",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	// 处理支付回调
-	response, err := h.paymentService.ProcessPaymentCallback(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "回调处理失败",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
 // safeInt64ToInt32 安全地将int64转换为int32，防止整数溢出
 func safeInt64ToInt32(value int64) int32 {
 	if value > math.MaxInt32 {
