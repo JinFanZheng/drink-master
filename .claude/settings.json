@@ -16,7 +16,7 @@
     "PreToolUse": [
       {
         "name": "pr_creation_validation",
-        "matcher": "Bash.*pr create",
+        "matcher": "Bash.*\\bgh pr create\\b|Bash.*\\bpr create\\b",
         "hooks": [
           {
             "type": "command",
@@ -27,7 +27,7 @@
       },
       {
         "name": "commit_validation", 
-        "matcher": "Bash.*git commit",
+        "matcher": "Bash.*\\bgit commit\\b",
         "hooks": [
           {
             "type": "command",
@@ -40,7 +40,7 @@
     "UserPromptSubmit": [
       {
         "name": "task_completion_check",
-        "matcher": ".*完成.*|.*done.*|.*finish.*",
+        "matcher": "^.*(任务|task).*(已完成|完成了|完成$)|^.*(已完成|完成了|完成$)|^.*\\b(done|finished|completed)\\b.*$",
         "hooks": [
           {
             "type": "command", 
