@@ -7,11 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 讨论需求 (Product Discussion)
 **User says**: "我想讨论一下用户登录功能" / "Let's discuss the user authentication feature"
 **Claude should**: 
-1. Read `docs/PRODUCT_ONBOARDING.md` for Product Agent workflow
-2. Read `docs/ROLES_COLLABORATION.md` section on Product responsibilities
-3. Act as Product Agent, analyze requirements
-4. Create PRD in `docs/PRD/` following template
-5. Define acceptance criteria and success metrics
+1. Read `docs/WORKFLOWS/REQUIREMENT.md` for requirement analysis workflow
+2. Analyze requirements and create PRD
+3. Create PRD in `docs/PRD/` following template
+4. Define acceptance criteria and success metrics
 
 **User says**: "这个功能的用户场景是什么" / "What are the user scenarios for this feature?"
 **Claude should**: 
@@ -22,9 +21,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 处理任务 (Task Processing)
 **User says**: "处理 #54" / "Work on issue #54" / "开始做 #54"
 **Claude should**: 
-1. Read `docs/AGENT_ONBOARDING.md` for complete Dev workflow
+1. Read `docs/WORKFLOWS/DEVELOPMENT.md` for complete Dev workflow
 2. View issue details: `gh issue view 54`
-3. Check dependencies using `docs/TASK_DEPENDENCY_PLANNING.md` if needed
+3. Check dependencies using `docs/WORKFLOWS/TASK_PARALLEL.md` if complex task
 4. Follow branch creation workflow from guide
 5. Use TodoWrite to plan implementation
 6. Start development following quality standards
@@ -32,13 +31,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **User says**: "继续之前的任务" / "Continue the previous task"
 **Claude should**: 
 1. Check current branch: `git branch --show-current`
-2. If on feature branch, read `docs/AGENT_ONBOARDING.md` section "情况B：任务恢复"
+2. If on feature branch, continue from `docs/WORKFLOWS/DEVELOPMENT.md` section 5
 3. Review uncommitted changes and resume
 
 ### 审查PR (PR Review)
 **User says**: "审查 PR #123" / "Review PR #123" / "看一下这个PR"
 **Claude should**:
-1. Read `docs/AGENT_PR_MERGE_GUIDE.md` for complete review checklist
+1. Read `docs/WORKFLOWS/PR_MERGE.md` for complete review checklist
 2. Execute validation steps from section "2. 合并前检查清单"
 3. Run automated validation script if available
 4. Classify risk level (Low/Medium/High)
@@ -46,37 +45,50 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **User says**: "合并这个PR" / "Merge this PR"
 **Claude should**: 
-1. Read `docs/AGENT_PR_MERGE_GUIDE.md` section "3. 风险分类与合并策略"
+1. Read `docs/WORKFLOWS/PR_MERGE.md` section "3. 风险分类与合并策略"
 2. Validate all required checks pass
 3. Choose appropriate merge strategy based on risk
 4. Execute merge command
 
-### 项目管理 (Project Management)
-**User says**: "创建一个Epic" / "Create an Epic"
+### 任务管理 (Task Management)
+**User says**: "创建一个Epic" / "Create an Epic" / "拆解任务"
 **Claude should**:
-1. Read `docs/PM_ONBOARDING.md` for PM workflow
-2. Read `docs/TASK_DEPENDENCY_PLANNING.md` for task breakdown
-3. Check `docs/ROLES_COLLABORATION.md` section on "任务拆解编译兼容性原则"
-4. Create Epic with proper dependency analysis
+1. Read `docs/WORKFLOWS/REQUIREMENT.md` section 2 for task breakdown
+2. Read `docs/WORKFLOWS/TASK_PARALLEL.md` for parallel analysis
+3. Create Epic with proper dependency marking
 
-**User says**: "分析任务依赖" / "Analyze task dependencies"
+**User says**: "分析任务依赖" / "Analyze task dependencies" / "哪些可以并行"
 **Claude should**:
-1. Read `docs/TASK_DEPENDENCY_PLANNING.md` completely
-2. Use DAG analysis method from the guide
+1. Read `docs/WORKFLOWS/TASK_PARALLEL.md` completely
+2. Check file conflicts
 3. Identify parallel execution opportunities
-4. Create dependency visualization
+4. Create task groups
+
+### 紧急处理 (Emergency)
+**User says**: "紧急修复" / "生产bug" / "hotfix"
+**Claude should**:
+1. Read `docs/EMERGENCY/HOTFIX.md`
+2. Create hotfix branch from main
+3. Apply minimal fix
+4. Create urgent PR
+
+**User says**: "需要回滚" / "rollback" / "恢复之前版本"
+**Claude should**:
+1. Read `docs/EMERGENCY/ROLLBACK.md`
+2. Identify rollback scope
+3. Execute appropriate rollback
 
 ### 查看项目状态 (Project Status)
 **User says**: "现在有哪些待处理的任务" / "What tasks are pending?"
 **Claude should**: 
 1. Run `gh issue list --state open --label backend,api`
-2. Check project board if mentioned in `docs/README.md`
+2. Provide summary of open issues
 
 **User says**: "有哪些被阻塞的任务" / "What tasks are blocked?"
 **Claude should**: 
 1. Run `gh issue list --label blocked --state open`
 2. Read each blocked issue to understand blockers
-3. Suggest resolution based on `docs/ROLES_COLLABORATION.md` guidelines
+3. Suggest resolution strategies
 
 ## 📖 Keyword-to-Guide Mapping
 
@@ -84,13 +96,15 @@ When user mentions these keywords, automatically read the corresponding guide:
 
 | Keywords | Guide to Read | Purpose |
 |----------|--------------|---------|
-| 处理任务, work on issue, 开发, development | `docs/AGENT_ONBOARDING.md` | Dev workflow |
-| 审查PR, review PR, 合并, merge | `docs/AGENT_PR_MERGE_GUIDE.md` | PR validation |
-| 需求, requirement, PRD, 产品设计 | `docs/PRODUCT_ONBOARDING.md` | Product workflow |
-| Epic, 任务拆解, task breakdown | `docs/PM_ONBOARDING.md` | PM workflow |
-| 依赖, dependency, DAG, 并行任务 | `docs/TASK_DEPENDENCY_PLANNING.md` | Dependency analysis |
-| 角色, roles, 职责, responsibility | `docs/ROLES_COLLABORATION.md` | Role definitions |
-| CI慢, CI slow, 优化构建 | `docs/CI_PERFORMANCE_OPTIMIZATION.md` | CI optimization |
+| 处理任务, work on issue, 开发, development | `docs/WORKFLOWS/DEVELOPMENT.md` | Dev workflow |
+| 审查PR, review PR, 合并, merge | `docs/WORKFLOWS/PR_MERGE.md` | PR validation |
+| 需求, requirement, PRD, 产品设计 | `docs/WORKFLOWS/REQUIREMENT.md` | Requirement analysis |
+| 拆解, Epic, 任务管理 | `docs/WORKFLOWS/REQUIREMENT.md` | Task breakdown |
+| 并行, parallel, 依赖, dependency | `docs/WORKFLOWS/TASK_PARALLEL.md` | Parallel analysis |
+| 紧急, urgent, hotfix, 生产bug | `docs/EMERGENCY/HOTFIX.md` | Emergency fix |
+| 回滚, rollback, revert | `docs/EMERGENCY/ROLLBACK.md` | Rollback guide |
+| API设计, 接口 | `docs/PATTERNS/API_DESIGN.md` | API patterns |
+| 错误处理, error | `docs/PATTERNS/ERROR_HANDLING.md` | Error patterns |
 
 ## ⚠️ Agent Collaboration Framework (REQUIRED)
 
@@ -102,13 +116,13 @@ Before starting ANY task, identify your role based on the work being performed:
 - **PM Agent**: Epic management, task coordination, dependency planning (📊)  
 - **Dev Agent**: Code development, technical implementation (💻)
 
-### 📚 Required Reading (Role-Based)
-**ALL Agents** must first read:
-1. `docs/ROLES_COLLABORATION.md` - Overall collaboration framework
-2. Your role-specific onboarding document:
-   - Product → `docs/PRODUCT_ONBOARDING.md`
-   - PM → `docs/PM_ONBOARDING.md`
-   - Dev → `docs/AGENT_ONBOARDING.md`
+### 📚 Required Reading
+**Quick Start**: `docs/QUICK_START.md` - Get started in 1 minute
+**Core Workflows**: 
+- Development → `docs/WORKFLOWS/DEVELOPMENT.md`
+- Requirements → `docs/WORKFLOWS/REQUIREMENT.md`
+- PR Review → `docs/WORKFLOWS/PR_MERGE.md`
+- Parallel Tasks → `docs/WORKFLOWS/TASK_PARALLEL.md`
 
 ### 1. Development Workflow (MANDATORY)
 
@@ -567,63 +581,49 @@ make deploy-check  # Complete pre-deployment validation
 
 ## 🚀 Quick Reference for Claude Agents
 
-### Common Task Scenarios with Guide References
+### Common Task Scenarios
 
 #### Scenario 1: User wants to discuss a feature
 ```
 User: "我想讨论一下订单退款功能"
 Claude Actions:
-1. Read docs/PRODUCT_ONBOARDING.md → Understand Product workflow
-2. Read docs/ROLES_COLLABORATION.md → Check Product responsibilities  
-3. Analyze business requirements
-4. Create PRD in docs/PRD/order-refund.md
-5. Define user stories and acceptance criteria
-6. Create issue: gh issue create --label "product"
+1. Read docs/WORKFLOWS/REQUIREMENT.md
+2. Analyze business requirements
+3. Create PRD in docs/PRD/order-refund.md
+4. Define acceptance criteria
+5. Create issue: gh issue create --label "backend"
 ```
 
 #### Scenario 2: User wants to start development
 ```
 User: "处理 #54"
 Claude Actions:
-1. Read docs/AGENT_ONBOARDING.md → Follow Dev workflow
+1. Read docs/WORKFLOWS/DEVELOPMENT.md
 2. Check issue: gh issue view 54
-3. Read docs/TASK_DEPENDENCY_PLANNING.md → Check dependencies
-4. Create branch following guide's instructions
-5. Use TodoWrite to plan tasks
-6. Implement following quality standards
-7. Create PR per docs/AGENT_PR_MERGE_GUIDE.md
+3. Create branch: git checkout -b feat/54-name
+4. Use TodoWrite to plan tasks
+5. Implement and test
+6. Create PR when complete
 ```
 
-#### Scenario 3: User wants to review code
+#### Scenario 3: User wants parallel tasks
 ```
-User: "审查一下最新的PR"
+User: "这些任务可以并行吗？"
 Claude Actions:
-1. Read docs/AGENT_PR_MERGE_GUIDE.md → Get review checklist
-2. List PRs: gh pr list --state open
-3. For each PR, follow guide's validation steps
-4. Classify risk (Low/Medium/High) per guide
-5. Provide feedback or merge decision
+1. Read docs/WORKFLOWS/TASK_PARALLEL.md
+2. Check file conflicts between tasks
+3. Identify dependencies
+4. Create parallel task groups
 ```
 
-#### Scenario 4: User needs help with CI/CD
+#### Scenario 4: Emergency fix needed
 ```
-User: "CI运行太慢了"
+User: "生产环境出bug了！"
 Claude Actions:
-1. Read docs/CI_PERFORMANCE_OPTIMIZATION.md → Get optimization strategies
-2. Analyze current CI configuration
-3. Apply optimizations from guide
-4. Monitor improvements
-```
-
-#### Scenario 5: User wants to understand roles
-```
-User: "PM和Product的区别是什么"
-Claude Actions:
-1. Read docs/ROLES_COLLABORATION.md → Full role definitions
-2. Explain based on sections:
-   - Product Agent: Strategy & Requirements
-   - PM Agent: Execution & Coordination
-   - Dev Agent: Implementation
+1. Read docs/EMERGENCY/HOTFIX.md
+2. Create hotfix branch from main
+3. Apply minimal fix
+4. Create urgent PR with "hotfix" label
 ```
 
 ### Role-Based Entry Points
