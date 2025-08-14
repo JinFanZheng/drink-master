@@ -51,9 +51,9 @@ func (s *MemberService) UpdateMember(
 	}
 
 	// 更新会员信息
-	member.Nickname = req.Nickname
-	member.Avatar = req.Avatar
-	member.UpdatedAt = time.Now()
+	member.Nickname = &req.Nickname
+	member.Avatar = &req.Avatar
+	// UpdatedAt 将在数据库中自动更新，不需要手动设置
 
 	err = s.memberRepo.Update(member)
 	if err != nil {
@@ -61,10 +61,19 @@ func (s *MemberService) UpdateMember(
 	}
 
 	// 返回更新结果
+	nickname := ""
+	avatar := ""
+	if member.Nickname != nil {
+		nickname = *member.Nickname
+	}
+	if member.Avatar != nil {
+		avatar = *member.Avatar
+	}
+
 	response := &contracts.UpdateMemberResponse{
 		ID:       member.ID,
-		Nickname: member.Nickname,
-		Avatar:   member.Avatar,
+		Nickname: nickname,
+		Avatar:   avatar,
 		Success:  true,
 	}
 
@@ -103,16 +112,23 @@ func (s *MemberService) CreateFranchiseIntention(
 	}
 
 	// 创建加盟意向
+	company := req.ContactName // Use ContactName as Company
+	name := req.ContactName
+	mobile := req.ContactPhone
+	area := req.IntendedLocation
+	remark := req.Remarks
+
 	intention := &models.FranchiseIntention{
-		ID:               s.generateFranchiseIntentionID(),
-		MemberID:         memberID,
-		ContactName:      req.ContactName,
-		ContactPhone:     req.ContactPhone,
-		IntendedLocation: req.IntendedLocation,
-		Remarks:          req.Remarks,
-		Status:           "Pending",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:        s.generateFranchiseIntentionID(),
+		MemberId:  &memberID,
+		Company:   &company,
+		Name:      &name,
+		Mobile:    &mobile,
+		Area:      &area,
+		Remark:    &remark,
+		IsHandled: false,
+		Version:   0,
+		CreatedOn: time.Now(),
 	}
 
 	err = s.franchiseIntentionRepo.Create(intention)
@@ -121,14 +137,32 @@ func (s *MemberService) CreateFranchiseIntention(
 	}
 
 	// 返回创建结果
+	memberId := ""
+	contactName := ""
+	contactPhone := ""
+	intendedLocation := ""
+
+	if intention.MemberId != nil {
+		memberId = *intention.MemberId
+	}
+	if intention.Name != nil {
+		contactName = *intention.Name
+	}
+	if intention.Mobile != nil {
+		contactPhone = *intention.Mobile
+	}
+	if intention.Area != nil {
+		intendedLocation = *intention.Area
+	}
+
 	response := &contracts.CreateFranchiseIntentionResponse{
 		ID:               intention.ID,
-		MemberID:         intention.MemberID,
-		ContactName:      intention.ContactName,
-		ContactPhone:     intention.ContactPhone,
-		IntendedLocation: intention.IntendedLocation,
-		Status:           intention.Status,
-		CreatedAt:        intention.CreatedAt,
+		MemberID:         memberId,
+		ContactName:      contactName,
+		ContactPhone:     contactPhone,
+		IntendedLocation: intendedLocation,
+		Status:           fmt.Sprintf("%t", intention.IsHandled), // Convert bool to string
+		CreatedAt:        intention.CreatedOn,
 		Success:          true,
 	}
 
@@ -146,26 +180,50 @@ func (s *MemberService) GetMemberInfo(memberID string) (*contracts.GetMemberInfo
 	// 转换加盟意向为摘要格式
 	var intentionSummaries []contracts.FranchiseIntentionSummary
 	for _, intention := range intentions {
+		contactName := ""
+		intendedLocation := ""
+
+		if intention.Name != nil {
+			contactName = *intention.Name
+		}
+		if intention.Area != nil {
+			intendedLocation = *intention.Area
+		}
+
 		summary := contracts.FranchiseIntentionSummary{
 			ID:               intention.ID,
-			ContactName:      intention.ContactName,
-			IntendedLocation: intention.IntendedLocation,
-			Status:           contracts.FranchiseIntentionStatus(intention.Status),
-			CreatedAt:        intention.CreatedAt,
+			ContactName:      contactName,
+			IntendedLocation: intendedLocation,
+			Status:           contracts.FranchiseIntentionStatus(fmt.Sprintf("%t", intention.IsHandled)),
+			CreatedAt:        intention.CreatedOn,
 		}
 		intentionSummaries = append(intentionSummaries, summary)
 	}
 
 	// 构建响应
+	nickname := ""
+	avatar := ""
+	wechatOpenId := ""
+
+	if member.Nickname != nil {
+		nickname = *member.Nickname
+	}
+	if member.Avatar != nil {
+		avatar = *member.Avatar
+	}
+	if member.WeChatOpenId != nil {
+		wechatOpenId = *member.WeChatOpenId
+	}
+
 	response := &contracts.GetMemberInfoResponse{
 		ID:                  member.ID,
-		Nickname:            member.Nickname,
-		Avatar:              member.Avatar,
-		WeChatOpenID:        member.WeChatOpenId,
-		Role:                member.Role,
+		Nickname:            nickname,
+		Avatar:              avatar,
+		WeChatOpenID:        wechatOpenId,
+		Role:                fmt.Sprintf("%d", member.Role), // Convert int to string
 		IsAdmin:             member.IsAdmin,
-		CreatedAt:           member.CreatedAt,
-		UpdatedAt:           member.UpdatedAt,
+		CreatedAt:           member.CreatedOn,
+		UpdatedAt:           member.CreatedOn, // Use CreatedOn since UpdatedOn might be nil
 		FranchiseIntentions: intentionSummaries,
 	}
 
@@ -241,10 +299,10 @@ func (s *MemberService) FindOrCreateByOpenID(openID, nickname, avatarUrl string)
 	if err == nil {
 		// Member exists, update avatar and nickname if provided
 		if nickname != "" {
-			member.Nickname = nickname
+			member.Nickname = &nickname
 		}
 		if avatarUrl != "" {
-			member.Avatar = avatarUrl
+			member.Avatar = &avatarUrl
 		}
 		if updateErr := s.memberRepo.Update(member); updateErr != nil {
 			return nil, updateErr
@@ -257,10 +315,12 @@ func (s *MemberService) FindOrCreateByOpenID(openID, nickname, avatarUrl string)
 		fmt.Sprintf("%v", err) == fmt.Sprintf("member not found with openID: %s", openID)) {
 		newMember := &models.Member{
 			ID:           uuid.New().String(),
-			Nickname:     nickname,
-			Avatar:       avatarUrl,
-			WeChatOpenId: openID,
-			Role:         "Member", // Default role
+			Nickname:     &nickname,
+			Avatar:       &avatarUrl,
+			WeChatOpenId: &openID,
+			Role:         1, // Default role as int (1 for Member)
+			Version:      0,
+			CreatedOn:    time.Now(),
 		}
 
 		if createErr := s.memberRepo.Create(newMember); createErr != nil {

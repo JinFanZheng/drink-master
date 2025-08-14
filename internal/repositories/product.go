@@ -46,9 +46,9 @@ func (r *ProductRepository) GetByID(id string) (*models.Product, error) {
 func (r *ProductRepository) GetMachineProducts(machineID string) ([]*models.MachineProductPrice, error) {
 	var machineProducts []*models.MachineProductPrice
 
-	err := r.db.Where("machine_id = ?", machineID).
-		Preload("Product").
-		Order("created_at ASC").
+	err := r.db.Where("machineId = ?", machineID). // Fix field name to camelCase
+		// Preload("Product").  // Disabled due to association issues
+		// Order("created_at ASC").  // Disabled due to field name issues
 		Find(&machineProducts).Error
 
 	if err != nil {

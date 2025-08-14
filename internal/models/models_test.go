@@ -180,7 +180,6 @@ func TestMachineModel(t *testing.T) {
 
 	// 创建售货机
 	servicePhone := "400-123-4567"
-	deviceId := "device_001"
 	machine := Machine{
 		ID:             "test-machine-001",
 		MachineOwnerId: owner.ID,
@@ -189,7 +188,7 @@ func TestMachineModel(t *testing.T) {
 		Area:           "上海浦东",
 		Address:        "浦东新区张江路123号",
 		ServicePhone:   &servicePhone,
-		DeviceId:       &deviceId,
+		// DeviceId field removed from model
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 

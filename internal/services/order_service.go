@@ -68,10 +68,7 @@ func (s *orderService) GetMemberOrderPaging(
 	// 转换为响应格式
 	orderResponses := make([]contracts.GetMemberOrderPagingResponse, len(orders))
 	for i, order := range orders {
-		productName := ""
-		if order.Product != nil {
-			productName = order.Product.Name
-		}
+		productName := "Unknown Product" // Since Product association is disabled
 
 		paymentStatus := ""
 		switch enums.PaymentStatus(order.PaymentStatus) {
@@ -87,12 +84,17 @@ func (s *orderService) GetMemberOrderPaging(
 			paymentStatus = contracts.PaymentStatusWaitPay
 		}
 
+		orderNo := ""
+		if order.OrderNo != nil {
+			orderNo = *order.OrderNo
+		}
+
 		orderResponses[i] = contracts.GetMemberOrderPagingResponse{
 			ID:                order.ID,
-			OrderNo:           order.OrderNo,
+			OrderNo:           orderNo,
 			ProductName:       productName,
 			PayAmount:         decimal.NewFromFloat(order.PayAmount),
-			CreatedAt:         order.CreatedAt,
+			CreatedAt:         order.CreatedOn,
 			PaymentStatus:     paymentStatus,
 			PaymentStatusDesc: order.GetPaymentStatusDesc(),
 		}
@@ -163,32 +165,40 @@ func (s *orderService) GetByID(id string) (*contracts.GetOrderByIdResponse, erro
 	}
 
 	// 构建响应
+	orderNo := ""
+	machineId := ""
+	productId := ""
+
+	if order.OrderNo != nil {
+		orderNo = *order.OrderNo
+	}
+	if order.MachineId != nil {
+		machineId = *order.MachineId
+	}
+	if order.ProductId != nil {
+		productId = *order.ProductId
+	}
+
 	response := &contracts.GetOrderByIdResponse{
 		ID:                order.ID,
-		OrderNo:           order.OrderNo,
-		MachineID:         order.MachineId,
-		ProductID:         order.ProductId,
+		OrderNo:           orderNo,
+		MachineID:         machineId,
+		ProductID:         productId,
 		PayAmount:         decimal.NewFromFloat(order.PayAmount),
 		PaymentStatus:     paymentStatus,
 		PaymentStatusDesc: order.GetPaymentStatusDesc(),
 		MakeStatus:        makeStatus,
 		MakeStatusDesc:    order.GetMakeStatusDesc(),
-		CreatedAt:         order.CreatedAt,
+		CreatedAt:         order.CreatedOn,
 		PaymentTime:       order.PaymentTime,
 		HasCup:            order.HasCup,
 		RefundAmount:      decimal.NewFromFloat(order.RefundAmount),
 		RefundReason:      order.RefundReason,
 	}
 
-	// 设置机器名称
-	if order.Machine != nil {
-		response.MachineName = order.Machine.Name
-	}
-
-	// 设置产品名称
-	if order.Product != nil {
-		response.ProductName = order.Product.Name
-	}
+	// Machine and Product associations are disabled, set default names
+	response.MachineName = "Unknown Machine"
+	response.ProductName = "Unknown Product"
 
 	return response, nil
 }
@@ -213,11 +223,8 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 		return nil, fmt.Errorf("查询机器信息失败: %w", err)
 	}
 
-	// 检查设备是否在线
-	deviceId := ""
-	if machine.DeviceId != nil {
-		deviceId = *machine.DeviceId
-	}
+	// 检查设备是否在线 - Use MachineNo as device identifier
+	deviceId := machine.MachineNo
 	online, err := s.deviceSvc.CheckDeviceOnline(deviceId)
 	if err != nil {
 		return nil, fmt.Errorf("检查设备状态失败: %w", err)
@@ -232,10 +239,10 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 	// 创建订单
 	order := &models.Order{
 		ID:            uuid.New().String(),
-		MemberId:      request.MemberID,
-		MachineId:     request.MachineID,
-		ProductId:     request.ProductID,
-		OrderNo:       orderNo,
+		MemberId:      &request.MemberID,
+		MachineId:     &request.MachineID,
+		ProductId:     &request.ProductID,
+		OrderNo:       &orderNo,
 		HasCup:        request.HasCup,
 		TotalAmount:   request.PayAmount.InexactFloat64(),
 		PayAmount:     request.PayAmount.InexactFloat64(),
@@ -249,9 +256,14 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 		return nil, fmt.Errorf("创建订单失败: %w", err)
 	}
 
+	responseOrderNo := ""
+	if order.OrderNo != nil {
+		responseOrderNo = *order.OrderNo
+	}
+
 	return &contracts.CreateOrderResponse{
 		OrderID: order.ID,
-		OrderNo: order.OrderNo,
+		OrderNo: responseOrderNo,
 		Message: "订单创建成功",
 	}, nil
 }

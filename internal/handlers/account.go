@@ -11,6 +11,14 @@ import (
 	"github.com/ddteam/drink-master/pkg/wechat"
 )
 
+// Helper function to get string value from pointer
+func getStringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // AccountHandler 账户处理器 (对应MobileAPI AccountController)
 type AccountHandler struct {
 	*BaseHandler
@@ -80,9 +88,9 @@ func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
 		"success": true,
 		"data": contracts.CheckUserInfoResponse{
 			Id:             member.ID,
-			AvatarUrl:      member.Avatar,
-			Nickname:       member.Nickname,
-			IsMachineOwner: member.Role == "Owner",
+			AvatarUrl:      getStringValue(member.Avatar),
+			Nickname:       getStringValue(member.Nickname),
+			IsMachineOwner: member.Role == 2, // 2 for Owner role
 			Token:          token,
 		},
 	}
@@ -127,9 +135,9 @@ func (h *AccountHandler) WeChatLogin(c *gin.Context) {
 		"success": true,
 		"data": contracts.WeChatLoginResponse{
 			Id:             member.ID,
-			AvatarUrl:      member.Avatar,
-			Nickname:       member.Nickname,
-			IsMachineOwner: member.Role == "Owner",
+			AvatarUrl:      getStringValue(member.Avatar),
+			Nickname:       getStringValue(member.Nickname),
+			IsMachineOwner: member.Role == 2, // 2 for Owner role
 			Token:          token,
 		},
 	}
@@ -164,9 +172,9 @@ func (h *AccountHandler) GetUserInfo(c *gin.Context) {
 		"success": true,
 		"data": contracts.GetUserInfoResponse{
 			Id:             member.ID,
-			AvatarUrl:      member.Avatar,
-			Nickname:       member.Nickname,
-			IsMachineOwner: member.Role == "Owner",
+			AvatarUrl:      getStringValue(member.Avatar),
+			Nickname:       getStringValue(member.Nickname),
+			IsMachineOwner: member.Role == 2, // 2 for Owner role
 		},
 	}
 	c.JSON(http.StatusOK, response)

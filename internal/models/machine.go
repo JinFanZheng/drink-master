@@ -6,25 +6,31 @@ import (
 	"github.com/ddteam/drink-master/internal/enums"
 )
 
-// Machine represents the vending machine entity
+// Machine represents the vending machine entity - matches production DB structure
 type Machine struct {
-	ID             string               `json:"id" gorm:"primaryKey;type:varchar(36)"`
-	MachineOwnerId string               `json:"machineOwnerId" gorm:"type:varchar(36);not null"`
-	MachineNo      string               `json:"machineNo" gorm:"uniqueIndex;type:varchar(50);not null"`
-	Name           string               `json:"name" gorm:"type:varchar(200);not null"`
-	Area           string               `json:"area" gorm:"type:varchar(100)"`
-	Address        string               `json:"address" gorm:"type:text"`
-	ServicePhone   *string              `json:"servicePhone" gorm:"type:varchar(20)"`
-	DeviceId       *string              `json:"deviceId" gorm:"type:varchar(100)"`
-	BusinessStatus enums.BusinessStatus `json:"businessStatus" gorm:"type:int;not null;default:1"`
-	CreatedAt      time.Time            `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt      time.Time            `json:"updatedAt" gorm:"autoUpdateTime"`
-	DeletedAt      *time.Time           `json:"deletedAt" gorm:"index"`
+	ID              string               `json:"id" gorm:"primaryKey;type:varchar(36);column:Id"`
+	MachineOwnerId  string               `json:"machineOwnerId" gorm:"type:varchar(36);column:MachineOwnerId"`
+	MachineNo       string               `json:"machineNo" gorm:"type:varchar(32);column:MachineNo"`
+	Name            string               `json:"name" gorm:"type:varchar(32);column:Name"`
+	Area            string               `json:"area" gorm:"type:varchar(64);column:Area"`
+	Address         string               `json:"address" gorm:"type:varchar(128);column:Address"`
+	ServicePhone    *string              `json:"servicePhone" gorm:"type:varchar(11);column:ServicePhone"`
+	BusinessStatus  enums.BusinessStatus `json:"businessStatus" gorm:"type:int;column:BusinessStatus"`
+	SubscribeTime   *time.Time           `json:"subscribeTime" gorm:"column:SubscribeTime"`
+	UnSubscribeTime *time.Time           `json:"unSubscribeTime" gorm:"column:UnSubscribeTime"`
+	DeviceId        *string              `json:"deviceId" gorm:"type:varchar(255);column:DeviceId"`
+	DeviceName      *string              `json:"deviceName" gorm:"type:varchar(255);column:DeviceName"`
+	DeviceSn        *string              `json:"deviceSn" gorm:"type:varchar(255);column:DeviceSn"`
+	BindDeviceTime  *time.Time           `json:"bindDeviceTime" gorm:"column:BindDeviceTime"`
+	IsDebugMode     []byte               `json:"isDebugMode" gorm:"column:IsDebugMode;type:bit(1)"`
+	Version         int64                `json:"version" gorm:"column:Version"`
+	CreatedOn       time.Time            `json:"createdOn" gorm:"column:CreatedOn"`
+	UpdatedOn       *time.Time           `json:"updatedOn" gorm:"column:UpdatedOn"`
 
-	// Relations
-	MachineOwner       *MachineOwner         `json:"machineOwner,omitempty" gorm:"foreignKey:MachineOwnerId;references:ID"`
-	MachineProductList []MachineProductPrice `json:"machineProductList,omitempty" gorm:"foreignKey:MachineId"`
-	Orders             []Order               `json:"orders,omitempty" gorm:"foreignKey:MachineId"`
+	// Relations - disabled due to field mapping complexities in production
+	// MachineOwner       *MachineOwner         `json:"machineOwner,omitempty" gorm:"foreignKey:MachineOwnerId;references:Id"`
+	// MachineProductList []MachineProductPrice `json:"machineProductList,omitempty" gorm:"foreignKey:MachineId"`
+	// Orders             []Order               `json:"orders,omitempty" gorm:"foreignKey:MachineId"`
 }
 
 // GetBusinessStatusDesc returns the description of the business status

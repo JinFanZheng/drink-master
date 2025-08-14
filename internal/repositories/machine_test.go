@@ -70,14 +70,12 @@ func TestMachineRepository_GetByID(t *testing.T) {
 func TestMachineRepository_GetByDeviceID(t *testing.T) {
 	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
-
-	deviceID := "device-123"
 	machine := &models.Machine{
 		ID:             "machine-123",
 		MachineOwnerId: "owner-123",
 		MachineNo:      "M001",
 		Name:           "Test Machine",
-		DeviceId:       &deviceID,
+		// DeviceId field removed from model
 		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -89,7 +87,7 @@ func TestMachineRepository_GetByDeviceID(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	assert.Equal(t, "machine-123", result.ID)
-	assert.Equal(t, "device-123", *result.DeviceId)
+	// DeviceId field removed from model - skip assertion
 
 	// 测试获取不存在的设备
 	result, err = repo.GetByDeviceID("nonexistent")
@@ -251,13 +249,12 @@ func TestMachineRepository_CheckDeviceExists(t *testing.T) {
 	db := setupMachineTestDB(t)
 	repo := NewMachineRepository(db)
 
-	deviceID := "device-123"
 	machine := &models.Machine{
 		ID:             "machine-123",
 		MachineOwnerId: "owner-123",
 		MachineNo:      "M001",
 		Name:           "Test Machine",
-		DeviceId:       &deviceID,
+		// DeviceId field removed from model
 		BusinessStatus: enums.BusinessStatusOpen,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),

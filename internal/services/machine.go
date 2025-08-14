@@ -9,6 +9,7 @@ import (
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/enums"
+	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
 )
 
@@ -28,6 +29,7 @@ type MachineService struct {
 	machineRepo   repositories.MachineRepositoryInterface
 	productRepo   repositories.ProductRepositoryInterface
 	deviceService DeviceServiceInterface
+	db            *gorm.DB
 }
 
 // NewMachineService 创建售货机服务
@@ -36,6 +38,7 @@ func NewMachineService(db *gorm.DB) MachineServiceInterface {
 		machineRepo:   repositories.NewMachineRepository(db),
 		productRepo:   repositories.NewProductRepository(db),
 		deviceService: NewDeviceService(),
+		db:            db,
 	}
 }
 
@@ -58,10 +61,8 @@ func (s *MachineService) GetMachinePaging(req contracts.GetMachinePagingRequest)
 	// 转换为响应格式
 	items := make([]contracts.GetMachinePagingResponse, len(machines))
 	for i, machine := range machines {
-		deviceID := ""
-		if machine.DeviceId != nil {
-			deviceID = *machine.DeviceId
-		}
+		// Use MachineNo as device identifier since DeviceId field was removed
+		deviceID := machine.MachineNo
 
 		items[i] = contracts.GetMachinePagingResponse{
 			ID:                 machine.ID,
@@ -122,17 +123,16 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 
 	// 检查设备在线状态并更新BusinessStatus
 	businessStatus := machine.BusinessStatus
-	if machine.DeviceId != nil && *machine.DeviceId != "" {
-		online, err := s.deviceService.CheckDeviceOnline(*machine.DeviceId)
+	// Use MachineNo as device identifier for online status check
+	if machine.MachineNo != "" {
+		online, err := s.deviceService.CheckDeviceOnline(machine.MachineNo)
 		if err == nil && !online {
 			businessStatus = enums.BusinessStatusOffline
 		}
 	}
 
-	deviceID := ""
-	if machine.DeviceId != nil {
-		deviceID = *machine.DeviceId
-	}
+	// Use MachineNo as device identifier
+	deviceID := machine.MachineNo
 
 	servicePhone := ""
 	if machine.ServicePhone != nil {
@@ -149,8 +149,8 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 		BusinessStatusDesc: enums.GetBusinessStatusDesc(businessStatus),
 		DeviceID:           deviceID,
 		ServicePhone:       servicePhone,
-		CreatedAt:          machine.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:          machine.UpdatedAt.Format(time.RFC3339),
+		CreatedAt:          machine.CreatedOn.Format(time.RFC3339),
+		UpdatedAt:          machine.CreatedOn.Format(time.RFC3339), // Use CreatedOn since UpdatedOn might be nil
 	}, nil
 }
 
@@ -165,23 +165,37 @@ func (s *MachineService) GetProductList(machineID string) ([]contracts.ProductLi
 		return []contracts.ProductListResponse{}, nil
 	}
 
+	// 手动查询产品信息，因为关联已被禁用
+	productIds := make([]string, 0, len(machineProducts))
+	for _, mp := range machineProducts {
+		productIds = append(productIds, mp.ProductId)
+	}
+
+	// 批量查询产品信息
+	productMap := make(map[string]*models.Product)
+	if len(productIds) > 0 {
+		var products []models.Product
+		err = s.db.Where("Id IN ?", productIds).Find(&products).Error
+		if err != nil {
+			return nil, fmt.Errorf("failed to get products: %w", err)
+		}
+
+		for i := range products {
+			productMap[products[i].ID] = &products[i]
+		}
+	}
+
 	// 转换为VendingMachine格式（包装为"限时巨惠"分组）
 	products := make([]contracts.MachineProductResponse, len(machineProducts))
 	for i, mp := range machineProducts {
-		category := ""
-		description := ""
-		if mp.Product != nil {
-			if mp.Product.Category != nil {
-				category = *mp.Product.Category
-			}
-			if mp.Product.Description != nil {
-				description = *mp.Product.Description
-			}
-		}
-
 		productName := "Unknown Product"
-		if mp.Product != nil {
-			productName = mp.Product.Name
+		image := ""
+
+		if product, exists := productMap[mp.ProductId]; exists {
+			productName = product.Name
+			if product.Image != nil {
+				image = *product.Image
+			}
 		}
 
 		products[i] = contracts.MachineProductResponse{
@@ -189,9 +203,9 @@ func (s *MachineService) GetProductList(machineID string) ([]contracts.ProductLi
 			Name:            productName,
 			Price:           mp.Price,
 			PriceWithoutCup: mp.PriceWithoutCup,
-			Stock:           mp.Stock,
-			Category:        category,
-			Description:     description,
+			Stock:           0,     // Stock not available in machine_product_prices
+			Category:        "",    // Category not available in current DB schema
+			Description:     image, // Use image as description for now
 		}
 	}
 

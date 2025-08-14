@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -44,7 +45,7 @@ func (j *JWTService) GenerateToken(member *models.Member) (string, error) {
 	now := time.Now()
 	claims := &middleware.JWTClaims{
 		MemberID: member.ID,
-		Role:     member.Role,
+		Role:     fmt.Sprintf("%d", member.Role), // Convert int to string
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(j.expiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
