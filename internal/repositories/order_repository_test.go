@@ -164,7 +164,7 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 
 	// 验证订单按创建时间倒序排列
 	if len(result) >= 2 {
-		assert.True(suite.T(), result[0].CreatedAt.After(result[1].CreatedAt) || result[0].CreatedAt.Equal(result[1].CreatedAt))
+		assert.True(suite.T(), result[0].CreatedOn.After(result[1].CreatedOn) || result[0].CreatedOn.Equal(result[1].CreatedOn))
 	}
 }
 
