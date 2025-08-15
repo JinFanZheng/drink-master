@@ -13,6 +13,14 @@ import (
 	"github.com/ddteam/drink-master/internal/repositories"
 )
 
+// ptrToString converts *string to string, returns empty string if nil
+func ptrToString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // MachineServiceInterface 售货机服务接口
 type MachineServiceInterface interface {
 	GetMachinePaging(req contracts.GetMachinePagingRequest) (*contracts.PagingResult, error)
@@ -62,14 +70,14 @@ func (s *MachineService) GetMachinePaging(req contracts.GetMachinePagingRequest)
 	items := make([]contracts.GetMachinePagingResponse, len(machines))
 	for i, machine := range machines {
 		// Use MachineNo as device identifier since DeviceId field was removed
-		deviceID := machine.MachineNo
+		deviceID := ptrToString(machine.MachineNo)
 
 		items[i] = contracts.GetMachinePagingResponse{
 			ID:                 machine.ID,
-			MachineNo:          machine.MachineNo,
-			Name:               machine.Name,
-			Area:               machine.Area,
-			Address:            machine.Address,
+			MachineNo:          ptrToString(machine.MachineNo),
+			Name:               ptrToString(machine.Name),
+			Area:               ptrToString(machine.Area),
+			Address:            ptrToString(machine.Address),
 			BusinessStatus:     machine.BusinessStatus.ToAPIString(),
 			BusinessStatusDesc: machine.GetBusinessStatusDesc(),
 			DeviceID:           deviceID,
@@ -100,8 +108,8 @@ func (s *MachineService) GetMachineList(machineOwnerID string) ([]*contracts.Get
 	for i, machine := range machines {
 		result[i] = &contracts.GetMachineListResponse{
 			ID:                 machine.ID,
-			MachineNo:          machine.MachineNo,
-			Name:               machine.Name,
+			MachineNo:          ptrToString(machine.MachineNo),
+			Name:               ptrToString(machine.Name),
 			BusinessStatus:     machine.BusinessStatus.ToAPIString(),
 			BusinessStatusDesc: machine.GetBusinessStatusDesc(),
 		}
@@ -124,15 +132,15 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 	// 检查设备在线状态并更新BusinessStatus
 	businessStatus := machine.BusinessStatus
 	// Use MachineNo as device identifier for online status check
-	if machine.MachineNo != "" {
-		online, err := s.deviceService.CheckDeviceOnline(machine.MachineNo)
+	if machine.MachineNo != nil && *machine.MachineNo != "" {
+		online, err := s.deviceService.CheckDeviceOnline(*machine.MachineNo)
 		if err == nil && !online {
 			businessStatus = enums.BusinessStatusOffline
 		}
 	}
 
 	// Use MachineNo as device identifier
-	deviceID := machine.MachineNo
+	deviceID := ptrToString(machine.MachineNo)
 
 	servicePhone := ""
 	if machine.ServicePhone != nil {
@@ -141,10 +149,10 @@ func (s *MachineService) GetMachineByID(id string) (*contracts.GetMachineByIDRes
 
 	return &contracts.GetMachineByIDResponse{
 		ID:                 machine.ID,
-		MachineNo:          machine.MachineNo,
-		Name:               machine.Name,
-		Area:               machine.Area,
-		Address:            machine.Address,
+		MachineNo:          ptrToString(machine.MachineNo),
+		Name:               ptrToString(machine.Name),
+		Area:               ptrToString(machine.Area),
+		Address:            ptrToString(machine.Address),
 		BusinessStatus:     businessStatus.ToAPIString(),
 		BusinessStatusDesc: enums.GetBusinessStatusDesc(businessStatus),
 		DeviceID:           deviceID,
@@ -282,7 +290,7 @@ func (s *MachineService) ValidateMachineOwnership(machineID string, ownerID stri
 		return errors.New("machine not found")
 	}
 
-	if machine.MachineOwnerId != ownerID {
+	if machine.MachineOwnerId == nil || *machine.MachineOwnerId != ownerID {
 		return errors.New("permission denied: not machine owner")
 	}
 

@@ -162,8 +162,3 @@ func TestProductHandler_GetSelectList_EmptyResult(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, products, 0)
 }
-
-// stringPtr 返回字符串指针的辅助函数
-func stringPtr(s string) *string {
-	return &s
-}

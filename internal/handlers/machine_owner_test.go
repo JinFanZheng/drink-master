@@ -31,18 +31,19 @@ func setupMachineOwnerTestDB(t *testing.T) *gorm.DB {
 
 func setupMachineOwnerTestData(t *testing.T, db *gorm.DB) (string, string, string) {
 	// 创建机主
+	ownerName := "Test Owner"
 	owner := models.MachineOwner{
 		ID:   "owner-001",
-		Name: "Test Owner",
+		Name: &ownerName,
 	}
 	require.NoError(t, db.Create(&owner).Error)
 
 	// 创建普通用户
 	member := models.Member{
 		ID:           "member-001",
-		Nickname:     "Test User",
-		WeChatOpenId: "openid-001",
-		Role:         "Member",
+		Nickname:     stringPtr("Test User"),
+		WeChatOpenId: stringPtr("openid-001"),
+		Role:         1, // Role是int类型，1表示普通会员
 	}
 	require.NoError(t, db.Create(&member).Error)
 
@@ -112,20 +113,20 @@ func TestMachineOwnerHandler_GetSales_Success(t *testing.T) {
 	orders := []models.Order{
 		{
 			ID:            "order-001",
-			MemberId:      "member-001",
-			MachineId:     machineID1,
-			ProductId:     "product-001",
-			OrderNo:       "ON001",
+			MemberId:      stringPtr("member-001"),
+			MachineId:     stringPtr(machineID1),
+			ProductId:     stringPtr("product-001"),
+			OrderNo:       stringPtr("ON001"),
 			PayAmount:     15.50,
 			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
 			ID:            "order-002",
-			MemberId:      "member-001",
-			MachineId:     machineID2,
-			ProductId:     "product-001",
-			OrderNo:       "ON002",
+			MemberId:      stringPtr("member-001"),
+			MachineId:     stringPtr(machineID2),
+			ProductId:     stringPtr("product-001"),
+			OrderNo:       stringPtr("ON002"),
 			PayAmount:     18.00,
 			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
@@ -213,10 +214,10 @@ func TestMachineOwnerHandler_GetSales_WithCustomDate(t *testing.T) {
 	customDate := time.Date(2025, 8, 10, 0, 0, 0, 0, time.UTC)
 	order := models.Order{
 		ID:            "order-custom",
-		MemberId:      "member-001",
-		MachineId:     machineID1,
-		ProductId:     "product-001",
-		OrderNo:       "ON-CUSTOM",
+		MemberId:      stringPtr("member-001"),
+		MachineId:     stringPtr(machineID1),
+		ProductId:     stringPtr("product-001"),
+		OrderNo:       stringPtr("ON-CUSTOM"),
 		PayAmount:     25.00,
 		PaymentStatus: int(enums.PaymentStatusPaid),
 		PaymentTime:   &customDate,
@@ -261,20 +262,20 @@ func TestMachineOwnerHandler_GetSalesStats_Success(t *testing.T) {
 	orders := []models.Order{
 		{
 			ID:            "order-001",
-			MemberId:      "member-001",
-			MachineId:     machineID1,
-			ProductId:     "product-001",
-			OrderNo:       "ON001",
+			MemberId:      stringPtr("member-001"),
+			MachineId:     stringPtr(machineID1),
+			ProductId:     stringPtr("product-001"),
+			OrderNo:       stringPtr("ON001"),
 			PayAmount:     15.50,
 			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,
 		},
 		{
 			ID:            "order-002",
-			MemberId:      "member-001",
-			MachineId:     machineID2,
-			ProductId:     "product-001",
-			OrderNo:       "ON002",
+			MemberId:      stringPtr("member-001"),
+			MachineId:     stringPtr(machineID2),
+			ProductId:     stringPtr("product-001"),
+			OrderNo:       stringPtr("ON002"),
 			PayAmount:     18.00,
 			PaymentStatus: int(enums.PaymentStatusPaid),
 			PaymentTime:   &today,

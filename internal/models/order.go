@@ -12,7 +12,7 @@ type Order struct {
 	MemberId       *string    `json:"memberId" gorm:"type:varchar(36);column:MemberId"`
 	MachineId      *string    `json:"machineId" gorm:"type:varchar(36);column:MachineId"`
 	ProductId      *string    `json:"productId" gorm:"type:varchar(36);column:ProductId"`
-	HasCup         bool       `json:"hasCup" gorm:"column:HasCup"`
+	HasCup         BitBool    `json:"hasCup" gorm:"column:HasCup"`
 	OrderNo        *string    `json:"orderNo" gorm:"type:varchar(32);column:OrderNo"`
 	TotalAmount    float64    `json:"totalAmount" gorm:"type:decimal(10,2);column:TotalAmount"`
 	PayAmount      float64    `json:"payAmount" gorm:"type:decimal(10,2);column:PayAmount"`

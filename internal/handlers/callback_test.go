@@ -137,7 +137,7 @@ func TestCallbackHandler_PaymentResult_Success(t *testing.T) {
 	// Mock order (waiting for payment)
 	order := &models.Order{
 		ID:            "order123",
-		OrderNo:       "ORD20250813001",
+		OrderNo:       stringPtr("ORD20250813001"),
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
 	}
 
@@ -225,7 +225,7 @@ func TestCallbackHandler_PaymentResult_OrderAlreadyPaid(t *testing.T) {
 	// Mock order (already paid)
 	order := &models.Order{
 		ID:            "order123",
-		OrderNo:       "ORD20250813001",
+		OrderNo:       stringPtr("ORD20250813001"),
 		PaymentStatus: int(enums.PaymentStatusPaid), // Already paid
 	}
 
@@ -261,7 +261,7 @@ func TestCallbackHandler_PaymentResult_PaymentServiceError(t *testing.T) {
 	// Mock order (waiting for payment)
 	order := &models.Order{
 		ID:            "order123",
-		OrderNo:       "ORD20250813001",
+		OrderNo:       stringPtr("ORD20250813001"),
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
 	}
 
@@ -301,8 +301,8 @@ func TestCallbackHandler_Integration(t *testing.T) {
 	// Create test data
 	member := &models.Member{
 		ID:           "test_member_123",
-		WeChatOpenId: "test_openid",
-		Nickname:     "测试用户",
+		WeChatOpenId: stringPtr("test_openid"),
+		Nickname:     stringPtr("测试用户"),
 	}
 	db.Create(member)
 
@@ -321,10 +321,10 @@ func TestCallbackHandler_Integration(t *testing.T) {
 
 	order := &models.Order{
 		ID:            "order123",
-		OrderNo:       "ORD20250813001",
-		MemberId:      "test_member_123",
-		MachineId:     "machine123",
-		ProductId:     "product123",
+		OrderNo:       stringPtr("ORD20250813001"),
+		MemberId:      stringPtr("test_member_123"),
+		MachineId:     stringPtr("machine123"),
+		ProductId:     stringPtr("product123"),
 		PayAmount:     10.50,
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
 	}
