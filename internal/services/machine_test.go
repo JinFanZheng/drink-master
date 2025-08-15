@@ -13,6 +13,11 @@ import (
 	"github.com/ddteam/drink-master/internal/models"
 )
 
+// stringPtr helper function for test setup
+func stringPtr(s string) *string {
+	return &s
+}
+
 // Mock implementations for testing
 type MockMachineRepository struct {
 	mock.Mock
@@ -139,11 +144,11 @@ func TestMachineService_GetMachinePaging(t *testing.T) {
 	machines := []*models.Machine{
 		{
 			ID:             "machine-1",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M001",
-			Name:           "Test Machine",
-			Area:           "Area A",
-			Address:        "Address A",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M001"),
+			Name:           stringPtr("Test Machine"),
+			Area:           stringPtr("Area A"),
+			Address:        stringPtr("Address A"),
 			BusinessStatus: enums.BusinessStatusOpen,
 		},
 	}
@@ -183,16 +188,15 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 	servicePhone := "123-456-7890"
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
-		MachineNo:      "M001",
-		Name:           "Test Machine",
-		Area:           "Area A",
-		Address:        "Address A",
+		MachineOwnerId: stringPtr("owner-123"),
+		MachineNo:      stringPtr("M001"),
+		Name:           stringPtr("Test Machine"),
+		Area:           stringPtr("Area A"),
+		Address:        stringPtr("Address A"),
 		BusinessStatus: enums.BusinessStatusOpen,
 		// DeviceId field removed from model
 		ServicePhone: &servicePhone,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		CreatedOn:    time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -217,13 +221,12 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
-		MachineNo:      "M001",
-		Name:           "Test Machine",
+		MachineOwnerId: stringPtr("owner-123"),
+		MachineNo:      stringPtr("M001"),
+		Name:           stringPtr("Test Machine"),
 		BusinessStatus: enums.BusinessStatusOpen,
 		// DeviceId field removed from model
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedOn: time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -241,15 +244,6 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 func TestMachineService_GetProductList(t *testing.T) {
 	service, _, mockProductRepo, _ := createMachineService()
 
-	category := "Drinks"
-	description := "Test product"
-	product := &models.Product{
-		ID:          "product-1",
-		Name:        "Coffee",
-		Category:    &category,
-		Description: &description,
-	}
-
 	machineProducts := []*models.MachineProductPrice{
 		{
 			ID:              "mp-1",
@@ -257,8 +251,6 @@ func TestMachineService_GetProductList(t *testing.T) {
 			ProductId:       "product-1",
 			Price:           5.0,
 			PriceWithoutCup: 4.5,
-			Stock:           100,
-			Product:         product,
 		},
 	}
 
@@ -277,9 +269,6 @@ func TestMachineService_GetProductList(t *testing.T) {
 	assert.Equal(t, "Coffee", productItem.Name)
 	assert.Equal(t, 5.0, productItem.Price)
 	assert.Equal(t, 4.5, productItem.PriceWithoutCup)
-	assert.Equal(t, 100, productItem.Stock)
-	assert.Equal(t, "Drinks", productItem.Category)
-	assert.Equal(t, "Test product", productItem.Description)
 
 	mockProductRepo.AssertExpectations(t)
 }

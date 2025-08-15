@@ -10,6 +10,11 @@ import (
 	"github.com/ddteam/drink-master/internal/models"
 )
 
+// stringPtr helper function for test setup  
+func stringPtr(s string) *string {
+	return &s
+}
+
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -28,13 +33,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 func createTestMember(t *testing.T, db *gorm.DB) *models.Member {
 	member := &models.Member{
 		ID:           "test-member-1",
-		Nickname:     "测试用户",
-		Avatar:       "https://example.com/avatar.jpg",
-		WeChatOpenId: "test-openid-1",
-		Role:         "Member",
-		IsAdmin:      false,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Nickname:     stringPtr("测试用户"),
+		Avatar:       stringPtr("https://example.com/avatar.jpg"),
+		WeChatOpenId: stringPtr("test-openid-1"),
+		Role:         1, // Member role as int
+		IsAdmin:      models.BitBool(0), // false as BitBool
+		CreatedOn:    time.Now(),
 	}
 
 	err := db.Create(member).Error
@@ -93,8 +97,8 @@ func TestMemberRepository_GetByWeChatOpenID(t *testing.T) {
 	// 创建测试数据
 	testMember := createTestMember(t, db)
 
-	// 测试正确的OpenID
-	member, err := repo.GetByWeChatOpenID(testMember.WeChatOpenId)
+	// 测试正确的OpenID  
+	member, err := repo.GetByWeChatOpenID(*testMember.WeChatOpenId)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -118,8 +122,8 @@ func TestMemberRepository_Update(t *testing.T) {
 	testMember := createTestMember(t, db)
 
 	// 更新数据
-	testMember.Nickname = "更新的昵称"
-	testMember.Avatar = "https://example.com/new-avatar.jpg"
+	testMember.Nickname = stringPtr("更新的昵称")
+	testMember.Avatar = stringPtr("https://example.com/new-avatar.jpg")
 
 	err := repo.Update(testMember)
 	if err != nil {
@@ -132,7 +136,7 @@ func TestMemberRepository_Update(t *testing.T) {
 		t.Fatalf("expected no error when getting updated member, got %v", err)
 	}
 
-	if updatedMember.Nickname != "更新的昵称" {
+	if *updatedMember.Nickname != "更新的昵称" {
 		t.Errorf("expected updated nickname '更新的昵称', got '%s'", updatedMember.Nickname)
 	}
 }
@@ -143,13 +147,12 @@ func TestMemberRepository_Create(t *testing.T) {
 
 	member := &models.Member{
 		ID:           "new-member-1",
-		Nickname:     "新用户",
-		Avatar:       "https://example.com/avatar.jpg",
-		WeChatOpenId: "new-openid-1",
-		Role:         "Member",
-		IsAdmin:      false,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Nickname:     stringPtr("新用户"),
+		Avatar:       stringPtr("https://example.com/avatar.jpg"),
+		WeChatOpenId: stringPtr("new-openid-1"),
+		Role:         1,
+		IsAdmin:      models.BitBool(0),
+		CreatedOn:    time.Now(),
 	}
 
 	err := repo.Create(member)
@@ -178,14 +181,12 @@ func TestMemberRepository_GetMemberWithFranchiseIntentions(t *testing.T) {
 
 	// 创建加盟意向
 	intention := &models.FranchiseIntention{
-		ID:               "test-intention-1",
-		MemberID:         testMember.ID,
-		ContactName:      "张三",
-		ContactPhone:     "13800138000",
-		IntendedLocation: "北京市",
-		Status:           "Pending",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:        "test-intention-1",
+		MemberId:  stringPtr(testMember.ID),
+		Name:      stringPtr("张三"),
+		Mobile:    stringPtr("13800138000"),
+		Area:      stringPtr("北京市"),
+		CreatedOn: time.Now(),
 	}
 
 	err := franchiseRepo.Create(intention)
