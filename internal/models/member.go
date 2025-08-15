@@ -4,22 +4,22 @@ import (
 	"time"
 )
 
-// Member represents the member/user entity
+// Member represents the member/user entity - matches production DB structure
 type Member struct {
-	ID             string     `json:"id" gorm:"primaryKey;type:varchar(36)"`
-	Nickname       string     `json:"nickname" gorm:"type:varchar(100);not null"`
-	Avatar         string     `json:"avatar" gorm:"type:text"`
-	WeChatOpenId   string     `json:"weChatOpenId" gorm:"uniqueIndex;type:varchar(100);not null"`
-	Role           string     `json:"role" gorm:"type:varchar(20);not null;default:'Member'"` // Member, Owner
-	MachineOwnerId *string    `json:"machineOwnerId" gorm:"type:varchar(36)"`
-	IsAdmin        bool       `json:"isAdmin" gorm:"default:false"`
-	CreatedAt      time.Time  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt      time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
-	DeletedAt      *time.Time `json:"deletedAt" gorm:"index"`
+	ID             string     `json:"id" gorm:"primaryKey;type:varchar(36);column:Id"`
+	Nickname       *string    `json:"nickname" gorm:"type:varchar(32);column:Nickname"`
+	Avatar         *string    `json:"avatar" gorm:"type:varchar(255);column:Avatar"`
+	WeChatOpenId   *string    `json:"weChatOpenId" gorm:"type:varchar(36);column:WeChatOpenId"`
+	Role           int        `json:"role" gorm:"type:int;column:Role"`
+	MachineOwnerId *string    `json:"machineOwnerId" gorm:"type:varchar(36);column:MachineOwnerId"`
+	IsAdmin        BitBool    `json:"isAdmin" gorm:"column:IsAdmin"`
+	Version        int64      `json:"version" gorm:"column:Version"`
+	CreatedOn      time.Time  `json:"createdOn" gorm:"column:CreatedOn"`
+	UpdatedOn      *time.Time `json:"updatedOn" gorm:"column:UpdatedOn"`
 
-	// Relations
-	MachineOwner *MachineOwner `json:"machineOwner,omitempty" gorm:"foreignKey:MachineOwnerId;references:ID"`
-	Orders       []Order       `json:"orders,omitempty" gorm:"foreignKey:MemberId"`
+	// Relations - disabled due to field mapping complexities
+	// MachineOwner *MachineOwner `json:"machineOwner,omitempty" gorm:"foreignKey:MachineOwnerId;references:Id"`
+	// Orders       []Order       `json:"orders,omitempty" gorm:"foreignKey:MemberId"`
 }
 
 // TableName returns the table name for Member

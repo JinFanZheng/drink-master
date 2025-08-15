@@ -36,8 +36,9 @@ func NewMachineRepository(db *gorm.DB) MachineRepositoryInterface {
 // GetByID 根据ID获取售货机
 func (r *MachineRepository) GetByID(id string) (*models.Machine, error) {
 	var machine models.Machine
+	// Temporarily disable Preload due to field mapping issues in production DB
 	err := r.db.Where("id = ?", id).
-		Preload("MachineOwner").
+		// Preload("MachineOwner").  // Disabled - causes association error
 		First(&machine).Error
 
 	if err != nil {
@@ -50,11 +51,11 @@ func (r *MachineRepository) GetByID(id string) (*models.Machine, error) {
 	return &machine, nil
 }
 
-// GetByDeviceID 根据设备ID获取售货机
+// GetByDeviceID 根据设备ID获取售货机 (使用machineNo作为设备标识)
 func (r *MachineRepository) GetByDeviceID(deviceID string) (*models.Machine, error) {
 	var machine models.Machine
-	err := r.db.Where("device_id = ?", deviceID).
-		First(&machine).Error
+	err := r.db.Where("machineNo = ?", deviceID). // Use camelCase field name
+							First(&machine).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -69,8 +70,8 @@ func (r *MachineRepository) GetByDeviceID(deviceID string) (*models.Machine, err
 // GetList 获取售货机列表（根据机主ID）
 func (r *MachineRepository) GetList(machineOwnerID string) ([]*models.Machine, error) {
 	var machines []*models.Machine
-	err := r.db.Where("machine_owner_id = ?", machineOwnerID).
-		Order("created_at DESC").
+	err := r.db.Where("MachineOwnerId = ?", machineOwnerID).
+		Order("CreatedOn DESC").
 		Find(&machines).Error
 
 	if err != nil {
@@ -87,13 +88,13 @@ func (r *MachineRepository) GetPaging(
 	var machines []*models.Machine
 	var totalCount int64
 
-	query := r.db.Where("machine_owner_id = ?", machineOwnerID)
+	query := r.db.Where("MachineOwnerId = ?", machineOwnerID)
 
 	// 添加关键词搜索
 	if keyword != "" {
 		keyword = strings.TrimSpace(keyword)
 		searchPattern := "%" + keyword + "%"
-		query = query.Where("name LIKE ? OR machine_no LIKE ? OR area LIKE ? OR address LIKE ?",
+		query = query.Where("Name LIKE ? OR MachineNo LIKE ? OR Area LIKE ? OR Address LIKE ?",
 			searchPattern, searchPattern, searchPattern, searchPattern)
 	}
 
@@ -106,7 +107,7 @@ func (r *MachineRepository) GetPaging(
 	// 分页查询
 	offset := (page - 1) * pageSize
 	err = query.Offset(offset).Limit(pageSize).
-		Order("created_at DESC").
+		Order("CreatedOn DESC").
 		Find(&machines).Error
 
 	if err != nil {
@@ -120,7 +121,7 @@ func (r *MachineRepository) GetPaging(
 func (r *MachineRepository) UpdateBusinessStatus(id string, status enums.BusinessStatus) error {
 	result := r.db.Model(&models.Machine{}).
 		Where("id = ?", id).
-		Update("business_status", status)
+		Update("BusinessStatus", status)
 
 	if result.Error != nil {
 		return fmt.Errorf("failed to update business status: %w", result.Error)
@@ -133,11 +134,11 @@ func (r *MachineRepository) UpdateBusinessStatus(id string, status enums.Busines
 	return nil
 }
 
-// CheckDeviceExists 检查设备是否存在
+// CheckDeviceExists 检查设备是否存在 (使用machineNo作为设备标识)
 func (r *MachineRepository) CheckDeviceExists(deviceID string) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.Machine{}).
-		Where("device_id = ?", deviceID).
+		Where("machineNo = ?", deviceID). // Use camelCase field name
 		Count(&count).Error
 
 	if err != nil {

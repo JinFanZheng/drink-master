@@ -54,7 +54,11 @@ func (s *MachineOwnerService) GetSales(machineOwnerID string, targetDate time.Ti
 	machineMap := make(map[string]string) // machine_id -> machine_name
 	for i, machine := range machines {
 		machineIDs[i] = machine.ID
-		machineMap[machine.ID] = machine.Name
+		if machine.Name != nil {
+			machineMap[machine.ID] = *machine.Name
+		} else {
+			machineMap[machine.ID] = ""
+		}
 	}
 
 	// 设置日期范围 (整天)
@@ -94,8 +98,12 @@ func (s *MachineOwnerService) GetSales(machineOwnerID string, targetDate time.Ti
 			sales = decimal.NewFromInt(0)
 		}
 
+		label := ""
+		if machine.Name != nil {
+			label = *machine.Name
+		}
 		result = append(result, contracts.ColumnModel{
-			Label: machine.Name,
+			Label: label,
 			Value: sales,
 		})
 	}

@@ -6,31 +6,31 @@ import (
 	"github.com/ddteam/drink-master/internal/enums"
 )
 
-// Order represents the order entity
+// Order represents the order entity - matches production DB structure
 type Order struct {
-	ID             string     `json:"id" gorm:"primaryKey;type:varchar(36)"`
-	MemberId       string     `json:"memberId" gorm:"type:varchar(36);not null"`
-	MachineId      string     `json:"machineId" gorm:"type:varchar(36);not null"`
-	ProductId      string     `json:"productId" gorm:"type:varchar(36);not null"`
-	OrderNo        string     `json:"orderNo" gorm:"uniqueIndex;type:varchar(100);not null"`
-	HasCup         bool       `json:"hasCup" gorm:"default:true"`
-	TotalAmount    float64    `json:"totalAmount" gorm:"type:decimal(10,2);not null"`
-	PayAmount      float64    `json:"payAmount" gorm:"type:decimal(10,2);not null"`
-	PaymentStatus  int        `json:"paymentStatus" gorm:"type:int;not null;default:0"`
-	PaymentTime    *time.Time `json:"paymentTime"`
-	ChannelOrderNo *string    `json:"channelOrderNo" gorm:"type:varchar(100)"`
-	MakeStatus     int        `json:"makeStatus" gorm:"type:int;not null;default:0"`
-	RefundTime     *time.Time `json:"refundTime"`
-	RefundAmount   float64    `json:"refundAmount" gorm:"type:decimal(10,2);default:0"`
-	RefundReason   *string    `json:"refundReason" gorm:"type:text"`
-	CreatedAt      time.Time  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt      time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
-	DeletedAt      *time.Time `json:"deletedAt" gorm:"index"`
+	ID             string     `json:"id" gorm:"primaryKey;type:varchar(36);column:Id"`
+	MemberId       *string    `json:"memberId" gorm:"type:varchar(36);column:MemberId"`
+	MachineId      *string    `json:"machineId" gorm:"type:varchar(36);column:MachineId"`
+	ProductId      *string    `json:"productId" gorm:"type:varchar(36);column:ProductId"`
+	HasCup         BitBool    `json:"hasCup" gorm:"column:HasCup"`
+	OrderNo        *string    `json:"orderNo" gorm:"type:varchar(32);column:OrderNo"`
+	TotalAmount    float64    `json:"totalAmount" gorm:"type:decimal(10,2);column:TotalAmount"`
+	PayAmount      float64    `json:"payAmount" gorm:"type:decimal(10,2);column:PayAmount"`
+	PaymentStatus  int        `json:"paymentStatus" gorm:"type:int;column:PaymentStatus"`
+	PaymentTime    *time.Time `json:"paymentTime" gorm:"column:PaymentTime"`
+	ChannelOrderNo *string    `json:"channelOrderNo" gorm:"type:varchar(32);column:ChannelOrderNo"`
+	MakeStatus     int        `json:"makeStatus" gorm:"type:int;column:MakeStatus"`
+	RefundTime     *time.Time `json:"refundTime" gorm:"column:RefundTime"`
+	RefundAmount   float64    `json:"refundAmount" gorm:"type:decimal(10,2);column:RefundAmount"`
+	RefundReason   *string    `json:"refundReason" gorm:"type:varchar(512);column:RefundReason"`
+	Version        int64      `json:"version" gorm:"column:Version"`
+	CreatedOn      time.Time  `json:"createdOn" gorm:"column:CreatedOn"`
+	UpdatedOn      *time.Time `json:"updatedOn" gorm:"column:UpdatedOn"`
 
-	// Relations
-	Member  *Member  `json:"member,omitempty" gorm:"foreignKey:MemberId;references:ID"`
-	Machine *Machine `json:"machine,omitempty" gorm:"foreignKey:MachineId;references:ID"`
-	Product *Product `json:"product,omitempty" gorm:"foreignKey:ProductId;references:ID"`
+	// Relations - disabled due to field mapping complexities
+	// Member  *Member  `json:"member,omitempty" gorm:"foreignKey:MemberId;references:Id"`
+	// Machine *Machine `json:"machine,omitempty" gorm:"foreignKey:MachineId;references:Id"`
+	// Product *Product `json:"product,omitempty" gorm:"foreignKey:ProductId;references:Id"`
 }
 
 // TableName returns the table name for Order

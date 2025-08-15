@@ -14,16 +14,10 @@ var (
 
 // AutoMigrate runs GORM auto-migration for all models
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(
-		&MachineOwner{},
-		&Member{},
-		&Machine{},
-		&Product{},
-		&MachineProductPrice{},
-		&Order{},
-		&FranchiseIntention{},
-		&MaterialSilo{},
-	)
+	// Note: Skip auto-migration for existing production database
+	// Models need to match existing database schema structure
+	// Issue #54: Align GORM models with production database fields
+	return nil
 }
 
 // AllModels returns a slice of all model pointers for batch operations

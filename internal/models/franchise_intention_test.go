@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -11,100 +12,151 @@ import (
 func TestFranchiseIntention_TableName(t *testing.T) {
 	fi := FranchiseIntention{}
 	expected := "franchise_intentions"
-
-	if fi.TableName() != expected {
-		t.Errorf("Expected table name %s, got %s", expected, fi.TableName())
-	}
+	assert.Equal(t, expected, fi.TableName())
 }
 
 func TestFranchiseIntention_BeforeCreate(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// 自动迁移
-	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
+	memberID := "member-123"
+	company := "测试公司"
+	name := "张三"
+	mobile := "13800138000"
+	area := "北京市"
+	remark := "测试备注"
 
 	fi := &FranchiseIntention{
-		ID:               "test-id",
-		MemberID:         "member-123",
-		ContactName:      "张三",
-		ContactPhone:     "13800138000",
-		IntendedLocation: "北京市",
-		Status:           "Pending",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:        "test-id",
+		MemberId:  &memberID,
+		Company:   &company,
+		Name:      &name,
+		Mobile:    &mobile,
+		Area:      &area,
+		Remark:    &remark,
+		IsHandled: BitBool(0),
+		Version:   1,
+		CreatedOn: time.Now(),
 	}
 
-	// 测试BeforeCreate钩子
 	err = fi.BeforeCreate(db)
-	if err != nil {
-		t.Errorf("BeforeCreate should not return error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestFranchiseIntention_BeforeUpdate(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
+
+	memberID := "member-123"
+	now := time.Now()
 
 	fi := &FranchiseIntention{
-		Status: "InvalidStatus",
+		ID:        "test-id",
+		MemberId:  &memberID,
+		IsHandled: BitBool(1),
+		Version:   1,
+		CreatedOn: now,
+		UpdatedOn: &now,
 	}
 
-	// 测试BeforeUpdate钩子 - 无效状态会被重置为Pending
 	err = fi.BeforeUpdate(db)
-	if err != nil {
-		t.Errorf("BeforeUpdate should not return error: %v", err)
+	assert.NoError(t, err)
+}
+
+func TestFranchiseIntention_GetHandledStatus(t *testing.T) {
+	tests := []struct {
+		name      string
+		isHandled BitBool
+		expected  bool
+	}{
+		{
+			name:      "handled status true",
+			isHandled: BitBool(1),
+			expected:  true,
+		},
+		{
+			name:      "handled status false",
+			isHandled: BitBool(0),
+			expected:  false,
+		},
 	}
 
-	if fi.Status != "Pending" {
-		t.Errorf("Expected status to be reset to 'Pending', got %s", fi.Status)
-	}
-
-	// 测试有效状态
-	fi.Status = "Approved"
-	err = fi.BeforeUpdate(db)
-	if err != nil {
-		t.Errorf("BeforeUpdate should not return error: %v", err)
-	}
-
-	if fi.Status != "Approved" {
-		t.Errorf("Expected status to remain 'Approved', got %s", fi.Status)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fi := &FranchiseIntention{
+				IsHandled: tt.isHandled,
+			}
+			assert.Equal(t, tt.expected, fi.GetHandledStatus())
+		})
 	}
 }
 
-func TestFranchiseIntention_StatusMethods(t *testing.T) {
-	testCases := []struct {
-		status     string
-		isPending  bool
-		isApproved bool
-		isRejected bool
+func TestFranchiseIntention_IsPending(t *testing.T) {
+	tests := []struct {
+		name      string
+		isHandled BitBool
+		expected  bool
 	}{
-		{"Pending", true, false, false},
-		{"Approved", false, true, false},
-		{"Rejected", false, false, true},
-		{"Unknown", false, false, false},
+		{
+			name:      "is pending - not handled",
+			isHandled: BitBool(0),
+			expected:  true,
+		},
+		{
+			name:      "is not pending - handled",
+			isHandled: BitBool(1),
+			expected:  false,
+		},
 	}
 
-	for _, tc := range testCases {
-		fi := FranchiseIntention{Status: tc.status}
-
-		if fi.IsPending() != tc.isPending {
-			t.Errorf("Status %s: expected IsPending %v, got %v", tc.status, tc.isPending, fi.IsPending())
-		}
-
-		if fi.IsApproved() != tc.isApproved {
-			t.Errorf("Status %s: expected IsApproved %v, got %v", tc.status, tc.isApproved, fi.IsApproved())
-		}
-
-		if fi.IsRejected() != tc.isRejected {
-			t.Errorf("Status %s: expected IsRejected %v, got %v", tc.status, tc.isRejected, fi.IsRejected())
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fi := &FranchiseIntention{
+				IsHandled: tt.isHandled,
+			}
+			assert.Equal(t, tt.expected, fi.IsPending())
+		})
 	}
+}
+
+func TestFranchiseIntention_ModelStructure(t *testing.T) {
+	memberID := "member-123"
+	company := "测试公司"
+	name := "张三"
+	mobile := "13800138000"
+	area := "北京市"
+	remark := "测试备注"
+	now := time.Now()
+
+	fi := FranchiseIntention{
+		ID:        "fi-123",
+		MemberId:  &memberID,
+		Company:   &company,
+		Name:      &name,
+		Mobile:    &mobile,
+		Area:      &area,
+		Remark:    &remark,
+		IsHandled: BitBool(0),
+		Version:   1,
+		CreatedOn: now,
+		UpdatedOn: &now,
+	}
+
+	assert.Equal(t, "fi-123", fi.ID)
+	assert.NotNil(t, fi.MemberId)
+	assert.Equal(t, "member-123", *fi.MemberId)
+	assert.NotNil(t, fi.Company)
+	assert.Equal(t, "测试公司", *fi.Company)
+	assert.NotNil(t, fi.Name)
+	assert.Equal(t, "张三", *fi.Name)
+	assert.NotNil(t, fi.Mobile)
+	assert.Equal(t, "13800138000", *fi.Mobile)
+	assert.NotNil(t, fi.Area)
+	assert.Equal(t, "北京市", *fi.Area)
+	assert.NotNil(t, fi.Remark)
+	assert.Equal(t, "测试备注", *fi.Remark)
+	assert.Equal(t, BitBool(0), fi.IsHandled)
+	assert.Equal(t, int64(1), fi.Version)
+	assert.Equal(t, now, fi.CreatedOn)
+	assert.NotNil(t, fi.UpdatedOn)
 }

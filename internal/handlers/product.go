@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/models"
 )
 
@@ -24,45 +23,59 @@ func NewProductHandler(db *gorm.DB) *ProductHandler {
 // GET /api/products/select
 // 对应原方法: Task<List<SelectViewModel>> GetSelectListAsync()
 func (h *ProductHandler) GetSelectList(c *gin.Context) {
-	// 查询产品及其机器价格信息
-	var machineProductPrices []models.MachineProductPrice
-
-	// 预加载产品信息，获取所有可用产品的价格
-	err := h.db.Preload("Product").
-		Where("deleted_at IS NULL").
-		Find(&machineProductPrices).Error
-
+	// Step 1: Get all products directly from products table using correct column mapping
+	var products []models.Product
+	err := h.db.Find(&products).Error
 	if err != nil {
 		h.InternalErrorResponse(c, err)
 		return
 	}
 
-	// 转换为SelectViewModel格式
-	var selectViewModels []contracts.SelectViewModel
-	productMap := make(map[string]*contracts.SelectViewModel)
+	// Step 2: Get machine product prices
+	var machineProductPrices []models.MachineProductPrice
+	err = h.db.Find(&machineProductPrices).Error
+	if err != nil {
+		h.InternalErrorResponse(c, err)
+		return
+	}
 
-	for _, mpp := range machineProductPrices {
-		if mpp.Product != nil {
-			// 使用产品ID作为key，避免重复产品
-			if _, exists := productMap[mpp.Product.ID]; !exists {
-				productMap[mpp.Product.ID] = &contracts.SelectViewModel{
-					ID:    mpp.Product.ID,
-					Name:  mpp.Product.Name,
-					Price: mpp.Price, // 使用第一个找到的价格
-				}
-			}
+	// Step 3: Create product mapping with prices from machine_product_prices
+	productMap := make(map[string]struct {
+		ID    string  `json:"id"`
+		Name  string  `json:"name"`
+		Price float64 `json:"price"`
+		Image *string `json:"image,omitempty"`
+	})
+
+	// Create product info from products table
+	for _, product := range products {
+		productMap[product.ID] = struct {
+			ID    string  `json:"id"`
+			Name  string  `json:"name"`
+			Price float64 `json:"price"`
+			Image *string `json:"image,omitempty"`
+		}{
+			ID:    product.ID,
+			Name:  product.Name,
+			Price: product.Price, // Use price from products table
+			Image: product.Image,
 		}
 	}
 
-	// 将map转换为slice
-	for _, vm := range productMap {
-		selectViewModels = append(selectViewModels, *vm)
+	// Step 4: Override with machine-specific pricing if available
+	for _, mpp := range machineProductPrices {
+		if productInfo, exists := productMap[mpp.ProductId]; exists {
+			// Update with machine-specific price
+			productInfo.Price = mpp.Price
+			productMap[mpp.ProductId] = productInfo
+		}
 	}
 
-	// 返回响应
-	response := contracts.ProductSelectListResponse{
-		Products: selectViewModels,
+	// Convert map to slice
+	var result []interface{}
+	for _, product := range productMap {
+		result = append(result, product)
 	}
 
-	h.SuccessResponse(c, response.Products)
+	h.SuccessResponse(c, result)
 }

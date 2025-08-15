@@ -180,7 +180,6 @@ func TestMachineService_GetMachinePaging_EmptyOwnerID(t *testing.T) {
 func TestMachineService_GetMachineByID(t *testing.T) {
 	service, mockRepo, _, mockDevice := createMachineService()
 
-	deviceID := "device-123"
 	servicePhone := "123-456-7890"
 	machine := &models.Machine{
 		ID:             "machine-123",
@@ -190,14 +189,14 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 		Area:           "Area A",
 		Address:        "Address A",
 		BusinessStatus: enums.BusinessStatusOpen,
-		DeviceId:       &deviceID,
-		ServicePhone:   &servicePhone,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		// DeviceId field removed from model
+		ServicePhone: &servicePhone,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
-	mockDevice.On("CheckDeviceOnline", "device-123").Return(true, nil)
+	mockDevice.On("CheckDeviceOnline", "M001").Return(true, nil)
 
 	result, err := service.GetMachineByID("machine-123")
 	require.NoError(t, err)
@@ -216,20 +215,19 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 	service, mockRepo, _, mockDevice := createMachineService()
 
-	deviceID := "device-123"
 	machine := &models.Machine{
 		ID:             "machine-123",
 		MachineOwnerId: "owner-123",
 		MachineNo:      "M001",
 		Name:           "Test Machine",
 		BusinessStatus: enums.BusinessStatusOpen,
-		DeviceId:       &deviceID,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		// DeviceId field removed from model
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
-	mockDevice.On("CheckDeviceOnline", "device-123").Return(false, nil)
+	mockDevice.On("CheckDeviceOnline", "M001").Return(false, nil)
 
 	result, err := service.GetMachineByID("machine-123")
 	require.NoError(t, err)

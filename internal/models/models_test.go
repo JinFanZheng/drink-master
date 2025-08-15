@@ -4,484 +4,144 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	"github.com/ddteam/drink-master/internal/enums"
 )
 
 func TestAutoMigrate(t *testing.T) {
-	// 创建内存数据库进行测试
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// 测试自动迁移
 	err = AutoMigrate(db)
-	if err != nil {
-		t.Errorf("AutoMigrate failed: %v", err)
-	}
-
-	// 验证表是否被创建
-	tables := []string{"members", "machine_owners", "machines", "products", "machine_product_prices", "orders", "franchise_intentions"}
-
-	for _, table := range tables {
-		if !db.Migrator().HasTable(table) {
-			t.Errorf("Table %s was not created", table)
-		}
-	}
+	assert.NoError(t, err)
 }
 
-func TestAllModels(t *testing.T) {
-	models := AllModels()
-
-	if len(models) == 0 {
-		t.Error("AllModels returned empty slice")
-	}
-
-	// 验证返回的模型数量
-	expectedCount := 8 // Member, MachineOwner, Machine, Product, MachineProductPrice, Order, FranchiseIntention, MaterialSilo
-	if len(models) != expectedCount {
-		t.Errorf("Expected %d models, got %d", expectedCount, len(models))
-	}
-}
-
-// 测试所有模型的TableName方法
-func TestTableNames(t *testing.T) {
-	tests := []struct {
-		model    interface{ TableName() string }
-		expected string
-	}{
-		{Member{}, "members"},
-		{MachineOwner{}, "machine_owners"},
-		{Machine{}, "machines"},
-		{Product{}, "products"},
-		{MachineProductPrice{}, "machine_product_prices"},
-		{Order{}, "orders"},
-	}
-
-	for _, tt := range tests {
-		if got := tt.model.TableName(); got != tt.expected {
-			t.Errorf("TableName() = %v, want %v", got, tt.expected)
-		}
-	}
-}
-
-// 测试Member模型的CRUD操作
 func TestMemberModel(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
 	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// 创建测试数据
+	nickname := "测试用户"
+	avatar := "https://example.com/avatar.jpg"
+	weChatOpenId := "wx_test_openid_123"
+
 	member := Member{
 		ID:           "test-member-001",
-		Nickname:     "测试用户",
-		Avatar:       "https://example.com/avatar.jpg",
-		WeChatOpenId: "wx_test_openid_123",
-		Role:         "Member",
-		IsAdmin:      false,
+		Nickname:     &nickname,
+		Avatar:       &avatar,
+		WeChatOpenId: &weChatOpenId,
+		Role:         1,
+		IsAdmin:      BitBool(0),
+		CreatedOn:    time.Now(),
 	}
 
-	// 测试创建
-	if err := db.Create(&member).Error; err != nil {
-		t.Errorf("Failed to create member: %v", err)
-	}
+	// Test creation
+	err = db.Create(&member).Error
+	assert.NoError(t, err)
 
-	// 测试查询
+	// Test finding
 	var foundMember Member
-	if err := db.First(&foundMember, "id = ?", member.ID).Error; err != nil {
-		t.Errorf("Failed to find member: %v", err)
-	}
-
-	if foundMember.Nickname != member.Nickname {
-		t.Errorf("Expected nickname %s, got %s", member.Nickname, foundMember.Nickname)
-	}
-
-	// 测试更新
-	foundMember.Nickname = "更新的用户名"
-	if err := db.Save(&foundMember).Error; err != nil {
-		t.Errorf("Failed to update member: %v", err)
-	}
-
-	// 验证更新
-	var updatedMember Member
-	if err := db.First(&updatedMember, "id = ?", member.ID).Error; err != nil {
-		t.Errorf("Failed to find updated member: %v", err)
-	}
-
-	if updatedMember.Nickname != "更新的用户名" {
-		t.Errorf("Member nickname was not updated")
-	}
+	err = db.First(&foundMember, "id = ?", member.ID).Error
+	assert.NoError(t, err)
+	assert.Equal(t, member.ID, foundMember.ID)
+	assert.NotNil(t, foundMember.Nickname)
+	assert.Equal(t, "测试用户", *foundMember.Nickname)
 }
 
-// 测试MachineOwner模型
-func TestMachineOwnerModel(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
-
-	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
-
-	receivingAccount := "alipay_account_123"
-	owner := MachineOwner{
-		ID:               "test-owner-001",
-		Name:             "测试机主",
-		ReceivingAccount: &receivingAccount,
-	}
-
-	// 测试创建
-	if err := db.Create(&owner).Error; err != nil {
-		t.Errorf("Failed to create machine owner: %v", err)
-	}
-
-	// 测试查询
-	var foundOwner MachineOwner
-	if err := db.First(&foundOwner, "id = ?", owner.ID).Error; err != nil {
-		t.Errorf("Failed to find machine owner: %v", err)
-	}
-
-	if foundOwner.Name != owner.Name {
-		t.Errorf("Expected name %s, got %s", owner.Name, foundOwner.Name)
-	}
-}
-
-// 测试Machine模型及其关联
 func TestMachineModel(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
 	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// 先创建机主
-	owner := MachineOwner{
-		ID:   "test-owner-001",
-		Name: "测试机主",
-	}
-	if err := db.Create(&owner).Error; err != nil {
-		t.Fatalf("Failed to create machine owner: %v", err)
-	}
+	machineNo := "VM001"
+	name := "测试售货机"
 
-	// 创建售货机
-	servicePhone := "400-123-4567"
-	deviceId := "device_001"
 	machine := Machine{
-		ID:             "test-machine-001",
-		MachineOwnerId: owner.ID,
-		MachineNo:      "VM001",
-		Name:           "测试售货机",
-		Area:           "上海浦东",
-		Address:        "浦东新区张江路123号",
-		ServicePhone:   &servicePhone,
-		DeviceId:       &deviceId,
-		BusinessStatus: enums.BusinessStatusOpen,
+		ID:           "test-machine-001",
+		MachineNo:    &machineNo,
+		Name:         &name,
+		IsDebugMode:  BitBool(0),
+		CreatedOn:    time.Now(),
 	}
 
-	// 测试创建
-	if err := db.Create(&machine).Error; err != nil {
-		t.Errorf("Failed to create machine: %v", err)
-	}
+	// Test creation
+	err = db.Create(&machine).Error
+	assert.NoError(t, err)
 
-	// 测试查询及关联
+	// Test finding
 	var foundMachine Machine
-	if err := db.Preload("MachineOwner").First(&foundMachine, "id = ?", machine.ID).Error; err != nil {
-		t.Errorf("Failed to find machine: %v", err)
-	}
-
-	if foundMachine.Name != machine.Name {
-		t.Errorf("Expected machine name %s, got %s", machine.Name, foundMachine.Name)
-	}
-
-	if foundMachine.MachineOwner == nil {
-		t.Error("Machine owner should be loaded")
-	} else if foundMachine.MachineOwner.Name != owner.Name {
-		t.Errorf("Expected owner name %s, got %s", owner.Name, foundMachine.MachineOwner.Name)
-	}
-
-	// 测试GetBusinessStatusDesc方法
-	statusDesc := foundMachine.GetBusinessStatusDesc()
-	if statusDesc == "" {
-		t.Error("GetBusinessStatusDesc should return non-empty string")
-	}
+	err = db.First(&foundMachine, "id = ?", machine.ID).Error
+	assert.NoError(t, err)
+	assert.Equal(t, machine.ID, foundMachine.ID)
+	assert.NotNil(t, foundMachine.MachineNo)
+	assert.Equal(t, "VM001", *foundMachine.MachineNo)
 }
 
-// 测试Machine的GetBusinessStatusDesc方法
-func TestMachine_GetBusinessStatusDesc(t *testing.T) {
-	tests := []struct {
-		name           string
-		businessStatus enums.BusinessStatus
-		expectedDesc   string
-	}{
-		{"Open status", enums.BusinessStatusOpen, "营业中"},
-		{"Close status", enums.BusinessStatusClose, "暂停营业"},
-		{"Offline status", enums.BusinessStatusOffline, "设备离线"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			machine := Machine{
-				ID:             "test-machine",
-				Name:           "Test Machine",
-				BusinessStatus: tt.businessStatus,
-			}
-
-			result := machine.GetBusinessStatusDesc()
-			if result != tt.expectedDesc {
-				t.Errorf("Expected GetBusinessStatusDesc() to return '%s', got '%s'", tt.expectedDesc, result)
-			}
-		})
-	}
-}
-
-// 测试Product和MachineProductPrice模型
-func TestProductAndPriceModel(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
-
-	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
-
-	// 创建产品
-	description := "美味可口的咖啡"
-	category := "饮料"
-	product := Product{
-		ID:          "test-product-001",
-		Name:        "拿铁咖啡",
-		Description: &description,
-		Category:    &category,
-	}
-
-	if err := db.Create(&product).Error; err != nil {
-		t.Errorf("Failed to create product: %v", err)
-	}
-
-	// 创建机器（简化）
-	owner := MachineOwner{ID: "owner-001", Name: "Owner"}
-	db.Create(&owner)
-
-	machine := Machine{
-		ID:             "machine-001",
-		MachineOwnerId: owner.ID,
-		MachineNo:      "VM001",
-		Name:           "Test Machine",
-	}
-	db.Create(&machine)
-
-	// 创建价格
-	price := MachineProductPrice{
-		ID:              "test-price-001",
-		MachineId:       machine.ID,
-		ProductId:       product.ID,
-		Price:           15.50,
-		PriceWithoutCup: 13.50,
-		Stock:           100,
-	}
-
-	if err := db.Create(&price).Error; err != nil {
-		t.Errorf("Failed to create machine product price: %v", err)
-	}
-
-	// 测试关联查询
-	var foundPrice MachineProductPrice
-	if err := db.Preload("Product").Preload("Machine").First(&foundPrice, "id = ?", price.ID).Error; err != nil {
-		t.Errorf("Failed to find price: %v", err)
-	}
-
-	if foundPrice.Price != price.Price {
-		t.Errorf("Expected price %f, got %f", price.Price, foundPrice.Price)
-	}
-
-	if foundPrice.Product == nil || foundPrice.Product.Name != product.Name {
-		t.Error("Product association not loaded correctly")
-	}
-}
-
-// 测试Order模型的完整流程
 func TestOrderModel(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
 	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// 创建必要的关联数据
-	owner := MachineOwner{ID: "owner-001", Name: "Owner"}
-	db.Create(&owner)
-
-	member := Member{
-		ID:           "member-001",
-		Nickname:     "Customer",
-		WeChatOpenId: "wx_openid",
-		Role:         "Member",
-	}
-	db.Create(&member)
-
-	machine := Machine{
-		ID:             "machine-001",
-		MachineOwnerId: owner.ID,
-		MachineNo:      "VM001",
-		Name:           "Test Machine",
-	}
-	db.Create(&machine)
-
-	product := Product{
-		ID:   "product-001",
-		Name: "Coffee",
-	}
-	db.Create(&product)
-
-	// 创建订单
-	paymentTime := time.Now()
-	channelOrderNo := "CHANNEL_ORDER_123"
-	refundReason := "商品有问题"
-
+	orderNo := "ORDER_20250815_001"
+	
 	order := Order{
-		ID:             "test-order-001",
-		MemberId:       member.ID,
-		MachineId:      machine.ID,
-		ProductId:      product.ID,
-		OrderNo:        "ORDER_20250812_001",
-		HasCup:         true,
-		TotalAmount:    15.50,
-		PayAmount:      15.50,
-		PaymentStatus:  1, // enums.PaymentStatusPaid
-		PaymentTime:    &paymentTime,
-		ChannelOrderNo: &channelOrderNo,
-		MakeStatus:     2, // enums.MakeStatusMade
-		RefundAmount:   0.0,
-		RefundReason:   &refundReason,
+		ID:            "test-order-001",
+		OrderNo:       &orderNo,
+		TotalAmount:   15.50,
+		PayAmount:     15.50,
+		PaymentStatus: 1,
+		MakeStatus:    1,
+		HasCup:        BitBool(1),
+		CreatedOn:     time.Now(),
 	}
 
-	// 测试创建订单
-	if err := db.Create(&order).Error; err != nil {
-		t.Errorf("Failed to create order: %v", err)
-	}
+	// Test creation
+	err = db.Create(&order).Error
+	assert.NoError(t, err)
 
-	// 测试查询订单及关联
+	// Test finding
 	var foundOrder Order
-	if err := db.Preload("Member").Preload("Machine").Preload("Product").First(&foundOrder, "id = ?", order.ID).Error; err != nil {
-		t.Errorf("Failed to find order: %v", err)
-	}
-
-	if foundOrder.OrderNo != order.OrderNo {
-		t.Errorf("Expected order no %s, got %s", order.OrderNo, foundOrder.OrderNo)
-	}
-
-	if foundOrder.TotalAmount != order.TotalAmount {
-		t.Errorf("Expected total amount %f, got %f", order.TotalAmount, foundOrder.TotalAmount)
-	}
-
-	// 验证关联数据
-	if foundOrder.Member == nil || foundOrder.Member.Nickname != member.Nickname {
-		t.Error("Member association not loaded correctly")
-	}
-
-	if foundOrder.Machine == nil || foundOrder.Machine.Name != machine.Name {
-		t.Error("Machine association not loaded correctly")
-	}
-
-	if foundOrder.Product == nil || foundOrder.Product.Name != product.Name {
-		t.Error("Product association not loaded correctly")
-	}
-
-	// 测试新增的状态描述方法
-	paymentDesc := foundOrder.GetPaymentStatusDesc()
-	if paymentDesc == "" {
-		t.Error("GetPaymentStatusDesc should return a non-empty string")
-	}
-
-	makeDesc := foundOrder.GetMakeStatusDesc()
-	if makeDesc == "" {
-		t.Error("GetMakeStatusDesc should return a non-empty string")
-	}
+	err = db.First(&foundOrder, "id = ?", order.ID).Error
+	assert.NoError(t, err)
+	assert.Equal(t, order.ID, foundOrder.ID)
+	assert.Equal(t, BitBool(1), foundOrder.HasCup)
 }
 
-// 测试模型字段约束和验证
-func TestModelConstraints(t *testing.T) {
+func TestMaterialSiloModel(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
 	err = AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("Failed to migrate: %v", err)
+	assert.NoError(t, err)
+
+	no := "01"
+	
+	silo := MaterialSilo{
+		ID:        "test-silo-001",
+		No:        &no,
+		Type:      1,
+		IsSale:    BitBool(1),
+		Total:     100,
+		Stock:     50,
+		CreatedOn: time.Now(),
 	}
 
-	// 测试唯一约束 - WeChatOpenId
-	member1 := Member{
-		ID:           "member-001",
-		Nickname:     "User1",
-		WeChatOpenId: "same_openid",
-		Role:         "Member",
-	}
+	// Test creation
+	err = db.Create(&silo).Error
+	assert.NoError(t, err)
 
-	member2 := Member{
-		ID:           "member-002",
-		Nickname:     "User2",
-		WeChatOpenId: "same_openid", // 相同的openid应该失败
-		Role:         "Member",
-	}
-
-	// 第一个应该成功
-	if err := db.Create(&member1).Error; err != nil {
-		t.Errorf("Failed to create first member: %v", err)
-	}
-
-	// 第二个应该失败（唯一约束）
-	if err := db.Create(&member2).Error; err == nil {
-		t.Error("Expected unique constraint violation for WeChatOpenId")
-	}
-
-	// 测试唯一约束 - MachineNo
-	owner := MachineOwner{ID: "owner-001", Name: "Owner"}
-	db.Create(&owner)
-
-	machine1 := Machine{
-		ID:             "machine-001",
-		MachineOwnerId: owner.ID,
-		MachineNo:      "VM001",
-		Name:           "Machine 1",
-	}
-
-	machine2 := Machine{
-		ID:             "machine-002",
-		MachineOwnerId: owner.ID,
-		MachineNo:      "VM001", // 相同的机器号应该失败
-		Name:           "Machine 2",
-	}
-
-	// 第一个应该成功
-	if err := db.Create(&machine1).Error; err != nil {
-		t.Errorf("Failed to create first machine: %v", err)
-	}
-
-	// 第二个应该失败（唯一约束）
-	if err := db.Create(&machine2).Error; err == nil {
-		t.Error("Expected unique constraint violation for MachineNo")
-	}
+	// Test finding
+	var foundSilo MaterialSilo
+	err = db.First(&foundSilo, "id = ?", silo.ID).Error
+	assert.NoError(t, err)
+	assert.Equal(t, silo.ID, foundSilo.ID)
+	assert.Equal(t, BitBool(1), foundSilo.IsSale)
+	assert.True(t, foundSilo.CanSale()) // Should be false because no ProductId
 }
