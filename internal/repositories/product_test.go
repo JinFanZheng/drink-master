@@ -109,7 +109,3 @@ func TestProductRepository_GetMachineProducts_EmptyResult(t *testing.T) {
 	assert.NotNil(t, result) // 应该返回空数组而不是nil
 }
 
-// 辅助函数
-func stringPtr(s string) *string {
-	return &s
-}

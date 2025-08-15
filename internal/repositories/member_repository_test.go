@@ -10,10 +10,6 @@ import (
 	"github.com/ddteam/drink-master/internal/models"
 )
 
-// stringPtr helper function for test setup  
-func stringPtr(s string) *string {
-	return &s
-}
 
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})

@@ -39,18 +39,18 @@ func (suite *OrderRepositoryTestSuite) createTestData() {
 	// 创建测试会员
 	member := &models.Member{
 		ID:           "test-member-1",
-		Nickname:     "Test Member",
-		WeChatOpenId: "test-openid-1",
-		Role:         "Member",
+		Nickname:     stringPtr("Test Member"),
+		WeChatOpenId: stringPtr("test-openid-1"),
+		Role:         1, // Member role as int
 	}
 	suite.db.Create(member)
 
 	// 创建测试机器
 	machine := &models.Machine{
 		ID:             "test-machine-1",
-		MachineOwnerId: "test-owner-1",
-		MachineNo:      "TM001",
-		Name:           "Test Machine",
+		MachineOwnerId: stringPtr("test-owner-1"),
+		MachineNo:      stringPtr("TM001"),
+		Name:           stringPtr("Test Machine"),
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 	suite.db.Create(machine)
@@ -66,11 +66,11 @@ func (suite *OrderRepositoryTestSuite) createTestData() {
 func (suite *OrderRepositoryTestSuite) TestCreate() {
 	order := &models.Order{
 		ID:            "test-order-1",
-		MemberId:      "test-member-1",
-		MachineId:     "test-machine-1",
-		ProductId:     "test-product-1",
-		OrderNo:       "ORD202508120001",
-		HasCup:        true,
+		MemberId:      stringPtr("test-member-1"),
+		MachineId:     stringPtr("test-machine-1"),
+		ProductId:     stringPtr("test-product-1"),
+		OrderNo:       stringPtr("ORD202508120001"),
+		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
@@ -93,11 +93,11 @@ func (suite *OrderRepositoryTestSuite) TestGetByID() {
 	// 创建测试订单
 	order := &models.Order{
 		ID:            "test-order-2",
-		MemberId:      "test-member-1",
-		MachineId:     "test-machine-1",
-		ProductId:     "test-product-1",
-		OrderNo:       "ORD202508120002",
-		HasCup:        true,
+		MemberId:      stringPtr("test-member-1"),
+		MachineId:     stringPtr("test-machine-1"),
+		ProductId:     stringPtr("test-product-1"),
+		OrderNo:       stringPtr("ORD202508120002"),
+		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
 		PaymentStatus: int(enums.PaymentStatusPaid),
@@ -126,11 +126,11 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 	orders := []*models.Order{
 		{
 			ID:            "test-order-3",
-			MemberId:      "test-member-1",
-			MachineId:     "test-machine-1",
-			ProductId:     "test-product-1",
-			OrderNo:       "ORD202508120003",
-			HasCup:        true,
+			MemberId:      stringPtr("test-member-1"),
+			MachineId:     stringPtr("test-machine-1"),
+			ProductId:     stringPtr("test-product-1"),
+			OrderNo:       stringPtr("ORD202508120003"),
+			HasCup:        models.BitBool(1),
 			TotalAmount:   15.80,
 			PayAmount:     15.80,
 			PaymentStatus: int(enums.PaymentStatusPaid),
@@ -139,10 +139,10 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 		},
 		{
 			ID:            "test-order-4",
-			MemberId:      "test-member-1",
-			MachineId:     "test-machine-1",
-			ProductId:     "test-product-1",
-			OrderNo:       "ORD202508120004",
+			MemberId:      stringPtr("test-member-1"),
+			MachineId:     stringPtr("test-machine-1"),
+			ProductId:     stringPtr("test-product-1"),
+			OrderNo:       stringPtr("ORD202508120004"),
 			HasCup:        false,
 			TotalAmount:   12.80,
 			PayAmount:     12.80,
@@ -172,11 +172,11 @@ func (suite *OrderRepositoryTestSuite) TestUpdate() {
 	// 创建测试订单
 	order := &models.Order{
 		ID:            "test-order-5",
-		MemberId:      "test-member-1",
-		MachineId:     "test-machine-1",
-		ProductId:     "test-product-1",
+		MemberId:      stringPtr("test-member-1"),
+		MachineId:     stringPtr("test-machine-1"),
+		ProductId:     stringPtr("test-product-1"),
 		OrderNo:       "ORD202508120005",
-		HasCup:        true,
+		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
@@ -207,11 +207,11 @@ func (suite *OrderRepositoryTestSuite) TestDelete() {
 	// 创建测试订单
 	order := &models.Order{
 		ID:            "test-order-6",
-		MemberId:      "test-member-1",
-		MachineId:     "test-machine-1",
-		ProductId:     "test-product-1",
+		MemberId:      stringPtr("test-member-1"),
+		MachineId:     stringPtr("test-machine-1"),
+		ProductId:     stringPtr("test-product-1"),
 		OrderNo:       "ORD202508120006",
-		HasCup:        true,
+		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
@@ -240,11 +240,11 @@ func (suite *OrderRepositoryTestSuite) TestGetByOrderNo() {
 	// 创建测试订单
 	order := &models.Order{
 		ID:            "test-order-7",
-		MemberId:      "test-member-1",
-		MachineId:     "test-machine-1",
-		ProductId:     "test-product-1",
+		MemberId:      stringPtr("test-member-1"),
+		MachineId:     stringPtr("test-machine-1"),
+		ProductId:     stringPtr("test-product-1"),
 		OrderNo:       "ORD202508120007",
-		HasCup:        true,
+		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
 		PaymentStatus: int(enums.PaymentStatusPaid),
