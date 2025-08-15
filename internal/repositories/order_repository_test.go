@@ -143,7 +143,7 @@ func (suite *OrderRepositoryTestSuite) TestGetByMemberPaging() {
 			MachineId:     stringPtr("test-machine-1"),
 			ProductId:     stringPtr("test-product-1"),
 			OrderNo:       stringPtr("ORD202508120004"),
-			HasCup:        false,
+			HasCup:        models.BitBool(0),
 			TotalAmount:   12.80,
 			PayAmount:     12.80,
 			PaymentStatus: int(enums.PaymentStatusWaitPay),
