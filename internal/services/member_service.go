@@ -126,7 +126,7 @@ func (s *MemberService) CreateFranchiseIntention(
 		Mobile:    &mobile,
 		Area:      &area,
 		Remark:    &remark,
-		IsHandled: false,
+		IsHandled: models.BitBool(0),
 		Version:   0,
 		CreatedOn: time.Now(),
 	}
@@ -221,7 +221,7 @@ func (s *MemberService) GetMemberInfo(memberID string) (*contracts.GetMemberInfo
 		Avatar:              avatar,
 		WeChatOpenID:        wechatOpenId,
 		Role:                fmt.Sprintf("%d", member.Role), // Convert int to string
-		IsAdmin:             member.IsAdmin,
+		IsAdmin:             member.IsAdmin.Bool(),
 		CreatedAt:           member.CreatedOn,
 		UpdatedAt:           member.CreatedOn, // Use CreatedOn since UpdatedOn might be nil
 		FranchiseIntentions: intentionSummaries,
