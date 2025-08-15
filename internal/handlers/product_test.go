@@ -67,9 +67,7 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 		ProductId:       product1.ID,
 		Price:           3.5,
 		PriceWithoutCup: 3.0,
-		Stock:           10,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 
 	mpp2 := &models.MachineProductPrice{
@@ -78,9 +76,7 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 		ProductId:       product2.ID,
 		Price:           4.0,
 		PriceWithoutCup: 3.5,
-		Stock:           15,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 
 	assert.NoError(t, db.Create(mpp1).Error)
