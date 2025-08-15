@@ -225,7 +225,12 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 
 	// 检查设备是否在线 - Use MachineNo as device identifier
 	deviceId := machine.MachineNo
-	online, err := s.deviceSvc.CheckDeviceOnline(func() string { if deviceId == nil { return "" }; return *deviceId }())
+	online, err := s.deviceSvc.CheckDeviceOnline(func() string {
+		if deviceId == nil {
+			return ""
+		}
+		return *deviceId
+	}())
 	if err != nil {
 		return nil, fmt.Errorf("检查设备状态失败: %w", err)
 	}
@@ -238,12 +243,17 @@ func (s *orderService) Create(request contracts.CreateOrderRequest) (*contracts.
 
 	// 创建订单
 	order := &models.Order{
-		ID:            uuid.New().String(),
-		MemberId:      &request.MemberID,
-		MachineId:     &request.MachineID,
-		ProductId:     &request.ProductID,
-		OrderNo:       &orderNo,
-		HasCup:        models.BitBool(func() int8 { if request.HasCup { return 1 }; return 0 }()),
+		ID:        uuid.New().String(),
+		MemberId:  &request.MemberID,
+		MachineId: &request.MachineID,
+		ProductId: &request.ProductID,
+		OrderNo:   &orderNo,
+		HasCup: models.BitBool(func() int8 {
+			if request.HasCup {
+				return 1
+			}
+			return 0
+		}()),
 		TotalAmount:   request.PayAmount.InexactFloat64(),
 		PayAmount:     request.PayAmount.InexactFloat64(),
 		PaymentStatus: int(enums.PaymentStatusWaitPay),

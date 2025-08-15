@@ -85,8 +85,13 @@ func (s *MaterialSiloService) GetPaging(
 	items := make([]contracts.GetMaterialSiloPagingResponse, 0, len(silos))
 	for _, silo := range silos {
 		item := contracts.GetMaterialSiloPagingResponse{
-			ID:          silo.ID,
-			MachineID:   func() string { if silo.MachineId == nil { return "" }; return *silo.MachineId }(),
+			ID: silo.ID,
+			MachineID: func() string {
+				if silo.MachineId == nil {
+					return ""
+				}
+				return *silo.MachineId
+			}(),
 			SiloNo:      parseNoToInt(silo.No),
 			ProductID:   silo.ProductId,
 			Stock:       silo.Stock,

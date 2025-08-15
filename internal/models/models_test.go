@@ -62,11 +62,11 @@ func TestMachineModel(t *testing.T) {
 	name := "测试售货机"
 
 	machine := Machine{
-		ID:           "test-machine-001",
-		MachineNo:    &machineNo,
-		Name:         &name,
-		IsDebugMode:  BitBool(0),
-		CreatedOn:    time.Now(),
+		ID:          "test-machine-001",
+		MachineNo:   &machineNo,
+		Name:        &name,
+		IsDebugMode: BitBool(0),
+		CreatedOn:   time.Now(),
 	}
 
 	// Test creation
@@ -90,7 +90,7 @@ func TestOrderModel(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderNo := "ORDER_20250815_001"
-	
+
 	order := Order{
 		ID:            "test-order-001",
 		OrderNo:       &orderNo,
@@ -122,7 +122,7 @@ func TestMaterialSiloModel(t *testing.T) {
 	assert.NoError(t, err)
 
 	no := "01"
-	
+
 	silo := MaterialSilo{
 		ID:        "test-silo-001",
 		No:        &no,
