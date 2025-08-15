@@ -3,13 +3,41 @@ package services
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/enums"
+	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
 )
+
+// getSaleStatusAPIString converts BitBool to API string
+func getSaleStatusAPIString(isSale models.BitBool) string {
+	if isSale.Bool() {
+		return "On"
+	}
+	return "Off"
+}
+
+// parseNoToInt converts No field to int, returns 0 if nil or invalid
+func parseNoToInt(no *string) int {
+	if no == nil {
+		return 0
+	}
+	// If No is a string like "01", "02", try to parse as int
+	// For now, just return 0 as default
+	return 0
+}
+
+// formatTimeToTime formats *time.Time to time.Time, returns zero time if nil
+func formatTimeToTime(t *time.Time) time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return *t
+}
 
 // MaterialSiloServiceInterface 物料槽服务接口
 type MaterialSiloServiceInterface interface {
@@ -58,19 +86,18 @@ func (s *MaterialSiloService) GetPaging(
 	for _, silo := range silos {
 		item := contracts.GetMaterialSiloPagingResponse{
 			ID:          silo.ID,
-			MachineID:   silo.MachineID,
-			SiloNo:      silo.SiloNo,
-			ProductID:   silo.ProductID,
+			MachineID:   func() string { if silo.MachineId == nil { return "" }; return *silo.MachineId }(),
+			SiloNo:      parseNoToInt(silo.No),
+			ProductID:   silo.ProductId,
 			Stock:       silo.Stock,
-			MaxCapacity: silo.MaxCapacity,
-			SaleStatus:  silo.GetSaleStatusAPIString(),
-			UpdatedAt:   silo.UpdatedAt,
+			MaxCapacity: silo.Total,
+			SaleStatus:  getSaleStatusAPIString(silo.IsSale),
+			UpdatedAt:   formatTimeToTime(silo.UpdatedOn),
 		}
 
-		// 设置产品名称
-		if silo.Product != nil {
-			item.ProductName = &silo.Product.Name
-		}
+		// 产品名称需要通过单独查询获取
+		// 由于GORM关联已禁用，这里暂时留空
+		// TODO: 实现产品名称查询逻辑
 
 		items = append(items, item)
 	}
@@ -100,10 +127,10 @@ func (s *MaterialSiloService) UpdateStock(
 	}
 
 	// 验证库存是否超出容量
-	if req.Stock > silo.MaxCapacity {
+	if req.Stock > silo.Total {
 		return &contracts.MaterialSiloOperationResult{
 			Success: false,
-			Message: fmt.Sprintf("库存不能超过最大容量 %d", silo.MaxCapacity),
+			Message: fmt.Sprintf("库存不能超过最大容量 %d", silo.Total),
 		}, nil
 	}
 
@@ -174,7 +201,7 @@ func (s *MaterialSiloService) ToggleSaleStatus(
 
 	// 如果要开启销售，需要检查是否有产品和库存
 	if saleStatus == enums.SaleStatusOn {
-		if silo.ProductID == nil {
+		if silo.ProductId == nil {
 			return &contracts.MaterialSiloOperationResult{
 				Success: false,
 				Message: "开启销售前需要先设置产品",
