@@ -28,15 +28,15 @@ func setupPaymentTestRouter() (*gin.Engine, *PaymentHandler) {
 	// 创建测试数据
 	member := &models.Member{
 		ID:           "test_member_123",
-		WeChatOpenId: "test_openid",
-		Nickname:     "测试用户",
+		WeChatOpenId: stringPtr("test_openid"),
+		Nickname:     stringPtr("测试用户"),
 	}
 	db.Create(member)
 
 	machine := &models.Machine{
 		ID:        "machine123",
-		MachineNo: "VM001",
-		Name:      "测试咖啡机",
+		MachineNo: stringPtr("VM001"),
+		Name:      stringPtr("测试咖啡机"),
 	}
 	db.Create(machine)
 
@@ -48,10 +48,10 @@ func setupPaymentTestRouter() (*gin.Engine, *PaymentHandler) {
 
 	order := &models.Order{
 		ID:        "order123",
-		OrderNo:   "ORD20240813001",
-		MemberId:  "test_member_123",
-		MachineId: "machine123",
-		ProductId: "product123",
+		OrderNo:   stringPtr("ORD20240813001"),
+		MemberId:  stringPtr("test_member_123"),
+		MachineId: stringPtr("machine123"),
+		ProductId: stringPtr("product123"),
 		PayAmount: 10.50,
 	}
 	db.Create(order)
@@ -99,15 +99,15 @@ func TestPaymentHandler_Get_WithAuth(t *testing.T) {
 	// 创建测试数据
 	member := &models.Member{
 		ID:           "test_member_123",
-		WeChatOpenId: "test_openid",
-		Nickname:     "测试用户",
+		WeChatOpenId: stringPtr("test_openid"),
+		Nickname:     stringPtr("测试用户"),
 	}
 	db.Create(member)
 
 	machine := &models.Machine{
 		ID:        "machine123",
-		MachineNo: "VM001",
-		Name:      "测试咖啡机",
+		MachineNo: stringPtr("VM001"),
+		Name:      stringPtr("测试咖啡机"),
 	}
 	db.Create(machine)
 
@@ -119,10 +119,10 @@ func TestPaymentHandler_Get_WithAuth(t *testing.T) {
 
 	order := &models.Order{
 		ID:        "order123",
-		OrderNo:   "ORD20240813001",
-		MemberId:  "test_member_123",
-		MachineId: "machine123",
-		ProductId: "product123",
+		OrderNo:   stringPtr("ORD20240813001"),
+		MemberId:  stringPtr("test_member_123"),
+		MachineId: stringPtr("machine123"),
+		ProductId: stringPtr("product123"),
 		PayAmount: 10.50,
 	}
 	db.Create(order)
