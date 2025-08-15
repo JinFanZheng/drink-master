@@ -161,7 +161,7 @@ func (s *MemberService) CreateFranchiseIntention(
 		ContactName:      contactName,
 		ContactPhone:     contactPhone,
 		IntendedLocation: intendedLocation,
-		Status:           fmt.Sprintf("%t", intention.IsHandled), // Convert bool to string
+		Status:           fmt.Sprintf("%t", intention.IsHandled.Bool()), // Convert BitBool to bool then string
 		CreatedAt:        intention.CreatedOn,
 		Success:          true,
 	}
@@ -194,7 +194,7 @@ func (s *MemberService) GetMemberInfo(memberID string) (*contracts.GetMemberInfo
 			ID:               intention.ID,
 			ContactName:      contactName,
 			IntendedLocation: intendedLocation,
-			Status:           contracts.FranchiseIntentionStatus(fmt.Sprintf("%t", intention.IsHandled)),
+			Status:           contracts.FranchiseIntentionStatus(fmt.Sprintf("%t", intention.IsHandled.Bool())),
 			CreatedAt:        intention.CreatedOn,
 		}
 		intentionSummaries = append(intentionSummaries, summary)

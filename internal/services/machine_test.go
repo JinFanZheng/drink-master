@@ -278,7 +278,7 @@ func TestMachineService_OpenOrCloseBusiness(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
@@ -299,7 +299,7 @@ func TestMachineService_OpenOrCloseBusiness_PermissionDenied(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
@@ -341,7 +341,7 @@ func TestMachineService_ValidateMachineOwnership(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -364,16 +364,16 @@ func TestMachineService_GetMachineList(t *testing.T) {
 	machines := []*models.Machine{
 		{
 			ID:             "machine-1",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M001",
-			Name:           "Test Machine 1",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M001"),
+			Name:           stringPtr("Test Machine 1"),
 			BusinessStatus: enums.BusinessStatusOpen,
 		},
 		{
 			ID:             "machine-2",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M002",
-			Name:           "Test Machine 2",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M002"),
+			Name:           stringPtr("Test Machine 2"),
 			BusinessStatus: enums.BusinessStatusClose,
 		},
 	}

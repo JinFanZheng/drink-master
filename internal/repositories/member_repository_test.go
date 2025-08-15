@@ -10,7 +10,6 @@ import (
 	"github.com/ddteam/drink-master/internal/models"
 )
 
-
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -32,7 +31,7 @@ func createTestMember(t *testing.T, db *gorm.DB) *models.Member {
 		Nickname:     stringPtr("测试用户"),
 		Avatar:       stringPtr("https://example.com/avatar.jpg"),
 		WeChatOpenId: stringPtr("test-openid-1"),
-		Role:         1, // Member role as int
+		Role:         1,                 // Member role as int
 		IsAdmin:      models.BitBool(0), // false as BitBool
 		CreatedOn:    time.Now(),
 	}
@@ -76,7 +75,7 @@ func TestMemberRepository_GetByID(t *testing.T) {
 	}
 
 	if member.Nickname != testMember.Nickname {
-		t.Errorf("expected nickname '%s', got '%s'", testMember.Nickname, member.Nickname)
+		t.Errorf("expected nickname '%s', got '%s'", *testMember.Nickname, *member.Nickname)
 	}
 
 	// 测试不存在的ID
@@ -93,14 +92,14 @@ func TestMemberRepository_GetByWeChatOpenID(t *testing.T) {
 	// 创建测试数据
 	testMember := createTestMember(t, db)
 
-	// 测试正确的OpenID  
+	// 测试正确的OpenID
 	member, err := repo.GetByWeChatOpenID(*testMember.WeChatOpenId)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	if member.WeChatOpenId != testMember.WeChatOpenId {
-		t.Errorf("expected openID '%s', got '%s'", testMember.WeChatOpenId, member.WeChatOpenId)
+		t.Errorf("expected openID '%s', got '%s'", *testMember.WeChatOpenId, *member.WeChatOpenId)
 	}
 
 	// 测试不存在的OpenID
@@ -133,7 +132,7 @@ func TestMemberRepository_Update(t *testing.T) {
 	}
 
 	if *updatedMember.Nickname != "更新的昵称" {
-		t.Errorf("expected updated nickname '更新的昵称', got '%s'", updatedMember.Nickname)
+		t.Errorf("expected updated nickname '更新的昵称', got '%s'", *updatedMember.Nickname)
 	}
 }
 
@@ -163,7 +162,7 @@ func TestMemberRepository_Create(t *testing.T) {
 	}
 
 	if createdMember.Nickname != member.Nickname {
-		t.Errorf("expected nickname '%s', got '%s'", member.Nickname, createdMember.Nickname)
+		t.Errorf("expected nickname '%s', got '%s'", *member.Nickname, *createdMember.Nickname)
 	}
 }
 

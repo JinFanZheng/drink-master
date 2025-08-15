@@ -175,7 +175,7 @@ func (suite *OrderRepositoryTestSuite) TestUpdate() {
 		MemberId:      stringPtr("test-member-1"),
 		MachineId:     stringPtr("test-machine-1"),
 		ProductId:     stringPtr("test-product-1"),
-		OrderNo:       "ORD202508120005",
+		OrderNo:       stringPtr("ORD202508120005"),
 		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
@@ -210,7 +210,7 @@ func (suite *OrderRepositoryTestSuite) TestDelete() {
 		MemberId:      stringPtr("test-member-1"),
 		MachineId:     stringPtr("test-machine-1"),
 		ProductId:     stringPtr("test-product-1"),
-		OrderNo:       "ORD202508120006",
+		OrderNo:       stringPtr("ORD202508120006"),
 		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,
@@ -228,7 +228,7 @@ func (suite *OrderRepositoryTestSuite) TestDelete() {
 	var deletedOrder models.Order
 	err = suite.db.Unscoped().First(&deletedOrder, "id = ?", "test-order-6").Error
 	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), deletedOrder.DeletedAt)
+	// Note: DeletedAt field removed from Order model
 
 	// 验证正常查询找不到
 	_, err = suite.repo.GetByID("test-order-6")
@@ -243,7 +243,7 @@ func (suite *OrderRepositoryTestSuite) TestGetByOrderNo() {
 		MemberId:      stringPtr("test-member-1"),
 		MachineId:     stringPtr("test-machine-1"),
 		ProductId:     stringPtr("test-product-1"),
-		OrderNo:       "ORD202508120007",
+		OrderNo:       stringPtr("ORD202508120007"),
 		HasCup:        models.BitBool(1),
 		TotalAmount:   15.80,
 		PayAmount:     15.80,

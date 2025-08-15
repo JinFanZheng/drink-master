@@ -28,7 +28,8 @@ type Machine struct {
 	UpdatedOn       *time.Time           `json:"updatedOn" gorm:"column:UpdatedOn"`
 
 	// Relations - disabled due to field mapping complexities in production
-	// MachineOwner       *MachineOwner         `json:"machineOwner,omitempty" gorm:"foreignKey:MachineOwnerId;references:Id"`
+	// MachineOwner       *MachineOwner         `json:"machineOwner,omitempty"`
+	//                                            `gorm:"foreignKey:MachineOwnerId;references:Id"`
 	// MachineProductList []MachineProductPrice `json:"machineProductList,omitempty" gorm:"foreignKey:MachineId"`
 	// Orders             []Order               `json:"orders,omitempty" gorm:"foreignKey:MachineId"`
 }

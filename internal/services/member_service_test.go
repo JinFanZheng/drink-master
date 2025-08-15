@@ -29,13 +29,12 @@ func setupServiceTestDB(t *testing.T) *gorm.DB {
 func createServiceTestMember(t *testing.T, db *gorm.DB) *models.Member {
 	member := &models.Member{
 		ID:           "service-test-member-1",
-		Nickname:     "服务测试用户",
-		Avatar:       "https://example.com/old-avatar.jpg",
-		WeChatOpenId: "service-test-openid-1",
-		Role:         "Member",
-		IsAdmin:      false,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Nickname:     stringPtr("服务测试用户"),
+		Avatar:       stringPtr("https://example.com/old-avatar.jpg"),
+		WeChatOpenId: stringPtr("service-test-openid-1"),
+		Role:         1,
+		IsAdmin:      models.BitBool(0),
+		CreatedOn:    time.Now(),
 	}
 
 	err := db.Create(member).Error
@@ -180,14 +179,12 @@ func TestMemberService_GetMemberInfo(t *testing.T) {
 
 	// 创建加盟意向
 	intention := &models.FranchiseIntention{
-		ID:               "service-test-intention-1",
-		MemberID:         testMember.ID,
-		ContactName:      "李四",
-		ContactPhone:     "13900139000",
-		IntendedLocation: "上海市",
-		Status:           "Pending",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:        "service-test-intention-1",
+		MemberId:  stringPtr(testMember.ID),
+		Name:      stringPtr("李四"),
+		Mobile:    stringPtr("13900139000"),
+		Area:      stringPtr("上海市"),
+		CreatedOn: time.Now(),
 	}
 
 	err := franchiseRepo.Create(intention)
@@ -205,16 +202,16 @@ func TestMemberService_GetMemberInfo(t *testing.T) {
 		t.Errorf("expected ID '%s', got '%s'", testMember.ID, response.ID)
 	}
 
-	if response.Nickname != testMember.Nickname {
-		t.Errorf("expected nickname '%s', got '%s'", testMember.Nickname, response.Nickname)
+	if response.Nickname != *testMember.Nickname {
+		t.Errorf("expected nickname '%s', got '%s'", *testMember.Nickname, response.Nickname)
 	}
 
 	if len(response.FranchiseIntentions) != 1 {
 		t.Errorf("expected 1 franchise intention, got %d", len(response.FranchiseIntentions))
 	}
 
-	if response.FranchiseIntentions[0].ContactName != intention.ContactName {
-		t.Errorf("expected contact name '%s', got '%s'", intention.ContactName, response.FranchiseIntentions[0].ContactName)
+	if response.FranchiseIntentions[0].ContactName != *intention.Name {
+		t.Errorf("expected contact name '%s', got '%s'", *intention.Name, response.FranchiseIntentions[0].ContactName)
 	}
 
 	// 测试不存在的用户
@@ -255,14 +252,12 @@ func TestMemberService_UpdateFranchiseIntentionStatus(t *testing.T) {
 	// 创建测试数据
 	testMember := createServiceTestMember(t, db)
 	intention := &models.FranchiseIntention{
-		ID:               "test-status-intention-1",
-		MemberID:         testMember.ID,
-		ContactName:      "王五",
-		ContactPhone:     "13700137000",
-		IntendedLocation: "深圳市",
-		Status:           "Pending",
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:        "test-status-intention-1",
+		MemberId:  stringPtr(testMember.ID),
+		Name:      stringPtr("王五"),
+		Mobile:    stringPtr("13700137000"),
+		Area:      stringPtr("深圳市"),
+		CreatedOn: time.Now(),
 	}
 
 	err := franchiseRepo.Create(intention)
@@ -337,7 +332,7 @@ func TestMemberService_FindByOpenID(t *testing.T) {
 	testMember := createServiceTestMember(t, db)
 
 	// Test finding existing member by OpenID
-	found, err := service.FindByOpenID(testMember.WeChatOpenId)
+	found, err := service.FindByOpenID(*testMember.WeChatOpenId)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -389,7 +384,7 @@ func TestMemberService_FindOrCreateByOpenID_ExistingMember(t *testing.T) {
 	testMember := createServiceTestMember(t, db)
 
 	// Test finding and updating existing member
-	found, err := service.FindOrCreateByOpenID(testMember.WeChatOpenId, "新昵称", "https://example.com/new-avatar.jpg")
+	found, err := service.FindOrCreateByOpenID(*testMember.WeChatOpenId, "新昵称", "https://example.com/new-avatar.jpg")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -399,11 +394,11 @@ func TestMemberService_FindOrCreateByOpenID_ExistingMember(t *testing.T) {
 	if found.ID != testMember.ID {
 		t.Errorf("expected ID '%s', got '%s'", testMember.ID, found.ID)
 	}
-	if found.Nickname != "新昵称" {
-		t.Errorf("expected nickname '新昵称', got '%s'", found.Nickname)
+	if *found.Nickname != "新昵称" {
+		t.Errorf("expected nickname '新昵称', got '%s'", *found.Nickname)
 	}
-	if found.Avatar != "https://example.com/new-avatar.jpg" {
-		t.Errorf("expected avatar 'https://example.com/new-avatar.jpg', got '%s'", found.Avatar)
+	if *found.Avatar != "https://example.com/new-avatar.jpg" {
+		t.Errorf("expected avatar 'https://example.com/new-avatar.jpg', got '%s'", *found.Avatar)
 	}
 }
 
@@ -426,17 +421,17 @@ func TestMemberService_FindOrCreateByOpenID_NewMember(t *testing.T) {
 	if created.ID == "" {
 		t.Error("expected non-empty ID")
 	}
-	if created.Nickname != nickname {
-		t.Errorf("expected nickname '%s', got '%s'", nickname, created.Nickname)
+	if *created.Nickname != nickname {
+		t.Errorf("expected nickname '%s', got '%s'", nickname, *created.Nickname)
 	}
-	if created.Avatar != avatar {
-		t.Errorf("expected avatar '%s', got '%s'", avatar, created.Avatar)
+	if *created.Avatar != avatar {
+		t.Errorf("expected avatar '%s', got '%s'", avatar, *created.Avatar)
 	}
-	if created.WeChatOpenId != openID {
-		t.Errorf("expected OpenID '%s', got '%s'", openID, created.WeChatOpenId)
+	if *created.WeChatOpenId != openID {
+		t.Errorf("expected OpenID '%s', got '%s'", openID, *created.WeChatOpenId)
 	}
-	if created.Role != "Member" {
-		t.Errorf("expected role 'Member', got '%s'", created.Role)
+	if created.Role != 1 {
+		t.Errorf("expected role 1, got %d", created.Role)
 	}
 
 	// Verify member was actually created in database
