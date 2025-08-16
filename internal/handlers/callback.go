@@ -32,8 +32,15 @@ func NewCallbackHandler(
 }
 
 // PaymentResult 支付结果回调
-// POST /api/Callback/PaymentResult
-// 对应原VendingMachine.MobileAPI/Controllers/CallbackController.cs的PaymentResultAsync方法
+// @Summary 支付结果回调接口
+// @Description 第三方支付平台回调支付结果的接口
+// @Tags Callback
+// @Accept json
+// @Produce plain
+// @Param request body contracts.PaymentCallbackResultRequest true "支付回调请求"
+// @Success 200 {string} string "ok"
+// @Failure 400 {string} string "参数错误"
+// @Router /Callback/PaymentResult [post]
 func (h *CallbackHandler) PaymentResult(c *gin.Context) {
 	var request contracts.PaymentCallbackResultRequest
 	if err := c.ShouldBindJSON(&request); err != nil {

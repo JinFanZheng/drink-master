@@ -25,7 +25,16 @@ func NewMachineHandler(db *gorm.DB) *MachineHandler {
 }
 
 // Get 获取售货机信息
-// GET /api/Machine/Get?id=machine_id
+// @Summary 获取售货机详细信息
+// @Description 根据售货机ID获取售货机的详细信息
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Param id query string true "售货机ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.GetMachineByIDResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Router /Machine/Get [get]
 func (h *MachineHandler) Get(c *gin.Context) {
 	id := c.Query("id")
 	if id == "" {
@@ -48,7 +57,15 @@ func (h *MachineHandler) Get(c *gin.Context) {
 }
 
 // CheckDeviceExist 检查设备是否存在
-// GET /api/Machine/CheckDeviceExist?deviceId=device_id
+// @Summary 检查设备是否存在
+// @Description 检查指定设备ID的设备是否存在于系统中
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Param deviceId query string true "设备ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.CheckDeviceExistResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Router /Machine/CheckDeviceExist [get]
 func (h *MachineHandler) CheckDeviceExist(c *gin.Context) {
 	var req contracts.CheckDeviceExistRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -70,7 +87,15 @@ func (h *MachineHandler) CheckDeviceExist(c *gin.Context) {
 }
 
 // GetProductList 获取售货机商品列表
-// GET /api/Machine/GetProductList?machineId=machine_id
+// @Summary 获取售货机商品列表
+// @Description 获取指定售货机的所有可售商品信息
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Param machineId query string true "售货机ID"
+// @Success 200 {object} contracts.APIResponse{data=[]contracts.ProductListResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Router /Machine/GetProductList [get]
 func (h *MachineHandler) GetProductList(c *gin.Context) {
 	machineID := c.Query("machineId")
 	if machineID == "" {
@@ -94,7 +119,18 @@ func (h *MachineHandler) GetProductList(c *gin.Context) {
 }
 
 // GetPaging 分页获取售货机列表（需要机主权限）
-// POST /api/Machine/GetPaging
+// @Summary 分页获取售货机列表
+// @Description 机主权限用户分页获取其管理的售货机列表
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Param request body contracts.GetMachinePagingRequest true "分页请求"
+// @Success 200 {object} contracts.APIResponse{data=contracts.GetMachinePagingResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Machine/GetPaging [post]
 func (h *MachineHandler) GetPaging(c *gin.Context) {
 	// 检查机主权限
 	if !h.IsMachineOwner(c) {
@@ -128,7 +164,16 @@ func (h *MachineHandler) GetPaging(c *gin.Context) {
 }
 
 // GetList 获取售货机列表（需要机主权限）
-// GET /api/Machine/GetList
+// @Summary 获取售货机列表
+// @Description 机主权限用户获取其管理的所有售货机列表
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Success 200 {object} contracts.APIResponse{data=[]contracts.GetMachineListResponse}
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Machine/GetList [get]
 func (h *MachineHandler) GetList(c *gin.Context) {
 	// 检查机主权限
 	if !h.IsMachineOwner(c) {
@@ -153,7 +198,19 @@ func (h *MachineHandler) GetList(c *gin.Context) {
 }
 
 // OpenOrCloseBusiness 开启或关闭营业状态（需要机主权限）
-// GET /api/Machine/OpenOrClose?id=machine_id
+// @Summary 切换售货机营业状态
+// @Description 机主权限用户切换指定售货机的营业状态（开启/关闭）
+// @Tags Machine
+// @Accept json
+// @Produce json
+// @Param id query string true "售货机ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.OpenOrCloseBusinessResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Machine/OpenOrClose [get]
 func (h *MachineHandler) OpenOrCloseBusiness(c *gin.Context) {
 	// 检查机主权限
 	if !h.IsMachineOwner(c) {

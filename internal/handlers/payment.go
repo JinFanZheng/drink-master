@@ -40,7 +40,18 @@ func NewPaymentHandler(db *gorm.DB) *PaymentHandler {
 }
 
 // Get 获取支付信息
-// GET /api/Payment/Get?orderId=xxx
+// @Summary 获取订单支付信息
+// @Description 获取指定订单的支付信息，包括微信支付参数
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param orderId query string true "订单ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.GetPaymentResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Payment/Get [get]
 func (h *PaymentHandler) Get(c *gin.Context) {
 	// 验证请求参数
 	var req contracts.GetPaymentRequest
@@ -119,7 +130,17 @@ func (h *PaymentHandler) Get(c *gin.Context) {
 }
 
 // Query 查询支付状态
-// GET /api/Payment/Query?orderId=xxx
+// @Summary 查询订单支付状态
+// @Description 查询指定订单的支付状态，包括第三方支付状态
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param orderId query string true "订单ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.QueryPaymentResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Payment/Query [get]
 func (h *PaymentHandler) Query(c *gin.Context) {
 	// 验证请求参数
 	var req contracts.QueryPaymentRequest

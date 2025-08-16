@@ -30,7 +30,17 @@ func NewMemberHandler(db *gorm.DB) *MemberHandler {
 }
 
 // Update 更新会员信息
-// POST /api/Member/Update
+// @Summary 更新会员信息
+// @Description 更新当前登录会员的基本信息
+// @Tags Member
+// @Accept json
+// @Produce json
+// @Param request body contracts.UpdateMemberRequest true "会员更新请求"
+// @Success 200 {object} contracts.APIResponse{data=contracts.UpdateMemberResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Member/Update [post]
 func (h *MemberHandler) Update(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -57,7 +67,18 @@ func (h *MemberHandler) Update(c *gin.Context) {
 }
 
 // AddFranchiseIntention 添加加盟意向
-// POST /api/Member/AddFranchiseIntention
+// @Summary 添加加盟意向
+// @Description 当前会员提交加盟意向申请
+// @Tags Member
+// @Accept json
+// @Produce json
+// @Param request body contracts.CreateFranchiseIntentionRequest true "加盟意向请求"
+// @Success 201 {object} contracts.APIResponse{data=contracts.CreateFranchiseIntentionResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 409 {object} contracts.APIResponse "已存在待处理的加盟意向"
+// @Security BearerAuth
+// @Router /Member/AddFranchiseIntention [post]
 func (h *MemberHandler) AddFranchiseIntention(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -98,7 +119,16 @@ func (h *MemberHandler) AddFranchiseIntention(c *gin.Context) {
 }
 
 // GetUserInfo 获取用户信息（包含加盟意向）
-// GET /api/Member/GetUserInfo
+// @Summary 获取会员详细信息
+// @Description 获取当前登录会员的详细信息，包括加盟意向状态
+// @Tags Member
+// @Accept json
+// @Produce json
+// @Success 200 {object} contracts.APIResponse{data=contracts.GetMemberInfoResponse}
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 500 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Member/GetUserInfo [get]
 func (h *MemberHandler) GetUserInfo(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {

@@ -20,8 +20,14 @@ func NewProductHandler(db *gorm.DB) *ProductHandler {
 }
 
 // GetSelectList 获取产品选择列表
-// GET /api/products/select
-// 对应原方法: Task<List<SelectViewModel>> GetSelectListAsync()
+// @Summary 获取产品选择列表
+// @Description 获取所有可选择的产品列表，包含价格信息
+// @Tags Product
+// @Accept json
+// @Produce json
+// @Success 200 {object} contracts.APIResponse{data=[]contracts.SelectViewModel}
+// @Failure 500 {object} contracts.APIResponse
+// @Router /products/select [get]
 func (h *ProductHandler) GetSelectList(c *gin.Context) {
 	// Step 1: Get all products directly from products table using correct column mapping
 	var products []models.Product
