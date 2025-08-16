@@ -284,7 +284,7 @@ func TestOrderService_GetByOrderNo(t *testing.T) {
 	// Test successful case
 	order := &models.Order{
 		ID:      "order123",
-		OrderNo: "ORD20250813001",
+		OrderNo: stringPtr("ORD20250813001"),
 	}
 	mockRepo.On("GetByOrderNo", "ORD20250813001").Return(order, nil)
 

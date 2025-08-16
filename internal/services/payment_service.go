@@ -84,7 +84,7 @@ func (s *paymentService) GetPaymentAccount(machineID string) (*contracts.Payment
 	account := &contracts.PaymentAccount{
 		ReceivingAccount:     getEnvOrDefault("WECHAT_PAY_MERCHANT_ID", "test_merchant_001"),
 		ReceivingKey:         getEnvOrDefault("WECHAT_PAY_API_KEY", "test_key_123"),
-		ReceivingOrderPrefix: fmt.Sprintf("VM_%s_", machine.MachineNo),
+		ReceivingOrderPrefix: fmt.Sprintf("VM_%s_", *machine.MachineNo),
 	}
 
 	return account, nil

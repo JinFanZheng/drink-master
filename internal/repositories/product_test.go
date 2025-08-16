@@ -16,22 +16,20 @@ func TestProductRepository_GetMachineProducts(t *testing.T) {
 
 	// 创建测试数据
 	product1 := &models.Product{
-		ID:          "product-1",
-		Name:        "Coffee",
-		Description: stringPtr("Black Coffee"),
-		Category:    stringPtr("Drinks"),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        "product-1",
+		Name:      "Coffee",
+		Status:    1,
+		Price:     5.0,
+		CreatedOn: time.Now(),
 	}
 	require.NoError(t, db.Create(product1).Error)
 
 	product2 := &models.Product{
-		ID:          "product-2",
-		Name:        "Tea",
-		Description: stringPtr("Green Tea"),
-		Category:    stringPtr("Drinks"),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        "product-2",
+		Name:      "Tea",
+		Status:    1,
+		Price:     4.0,
+		CreatedOn: time.Now(),
 	}
 	require.NoError(t, db.Create(product2).Error)
 
@@ -42,9 +40,7 @@ func TestProductRepository_GetMachineProducts(t *testing.T) {
 		ProductId:       "product-1",
 		Price:           5.0,
 		PriceWithoutCup: 4.5,
-		Stock:           100,
-		CreatedAt:       time.Now().Add(-1 * time.Hour),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now().Add(-1 * time.Hour),
 	}
 	require.NoError(t, db.Create(machineProduct1).Error)
 
@@ -54,9 +50,7 @@ func TestProductRepository_GetMachineProducts(t *testing.T) {
 		ProductId:       "product-2",
 		Price:           4.0,
 		PriceWithoutCup: 3.5,
-		Stock:           50,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 	require.NoError(t, db.Create(machineProduct2).Error)
 
@@ -67,9 +61,7 @@ func TestProductRepository_GetMachineProducts(t *testing.T) {
 		ProductId:       "product-1",
 		Price:           6.0,
 		PriceWithoutCup: 5.5,
-		Stock:           75,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 	require.NoError(t, db.Create(machineProduct3).Error)
 
@@ -82,15 +74,8 @@ func TestProductRepository_GetMachineProducts(t *testing.T) {
 	assert.Equal(t, "mp-1", result[0].ID)
 	assert.Equal(t, "mp-2", result[1].ID)
 
-	// 验证商品信息被正确预加载
-	assert.NotNil(t, result[0].Product)
-	assert.Equal(t, "Coffee", result[0].Product.Name)
-	assert.Equal(t, "Black Coffee", *result[0].Product.Description)
-	assert.Equal(t, "Drinks", *result[0].Product.Category)
-
-	assert.NotNil(t, result[1].Product)
-	assert.Equal(t, "Tea", result[1].Product.Name)
-	assert.Equal(t, "Green Tea", *result[1].Product.Description)
+	// 验证商品信息被正确预加载 - removed Product field references since Product field doesn't exist
+	// TODO: If Product preloading is needed, need to add Product field to MachineProductPrice model
 
 	// 测试不存在的机器
 	result, err = repo.GetMachineProducts("nonexistent")
@@ -107,9 +92,4 @@ func TestProductRepository_GetMachineProducts_EmptyResult(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 0)
 	assert.NotNil(t, result) // 应该返回空数组而不是nil
-}
-
-// 辅助函数
-func stringPtr(s string) *string {
-	return &s
 }

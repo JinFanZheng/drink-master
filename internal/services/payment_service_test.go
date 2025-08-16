@@ -134,8 +134,8 @@ func TestPaymentService_GetPaymentAccount(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:        "machine-001",
-		MachineNo: "VM001",
-		Name:      "测试咖啡机",
+		MachineNo: stringPtr("VM001"),
+		Name:      stringPtr("测试咖啡机"),
 	}
 
 	mockMachineRepo.On("GetByID", "machine-001").Return(machine, nil)
@@ -266,7 +266,7 @@ func TestPaymentService_ProcessPaymentCallback_Success(t *testing.T) {
 
 	order := &models.Order{
 		ID:            "order-001",
-		OrderNo:       "ORD20250812001",
+		OrderNo:       stringPtr("ORD20250812001"),
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
 		PayAmount:     15.80,
 	}
@@ -305,7 +305,7 @@ func TestPaymentService_ProcessPaymentCallback_Failed(t *testing.T) {
 
 	order := &models.Order{
 		ID:            "order-001",
-		OrderNo:       "ORD20250812001",
+		OrderNo:       stringPtr("ORD20250812001"),
 		PaymentStatus: int(enums.PaymentStatusWaitPay),
 		PayAmount:     15.80,
 	}

@@ -34,28 +34,25 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 
 	// 创建测试数据
 	product1 := &models.Product{
-		ID:          "prod-1",
-		Name:        "可乐",
-		Description: stringPtr("经典可乐"),
-		Category:    stringPtr("饮料"),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        "prod-1",
+		Name:      "可乐",
+		Status:    1,
+		Price:     5.00,
+		CreatedOn: time.Now(),
 	}
 
 	product2 := &models.Product{
-		ID:          "prod-2",
-		Name:        "橙汁",
-		Description: stringPtr("新鲜橙汁"),
-		Category:    stringPtr("饮料"),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        "prod-2",
+		Name:      "橙汁",
+		Status:    1,
+		Price:     6.00,
+		CreatedOn: time.Now(),
 	}
 
 	machine := &models.Machine{
 		ID:        "machine-1",
-		Name:      "测试机器",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Name:      stringPtr("测试机器"),
+		CreatedOn: time.Now(),
 	}
 
 	// 保存测试数据
@@ -70,9 +67,7 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 		ProductId:       product1.ID,
 		Price:           3.5,
 		PriceWithoutCup: 3.0,
-		Stock:           10,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 
 	mpp2 := &models.MachineProductPrice{
@@ -81,9 +76,7 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 		ProductId:       product2.ID,
 		Price:           4.0,
 		PriceWithoutCup: 3.5,
-		Stock:           15,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedOn:       time.Now(),
 	}
 
 	assert.NoError(t, db.Create(mpp1).Error)

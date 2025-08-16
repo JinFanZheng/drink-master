@@ -7,11 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/enums"
 	"github.com/ddteam/drink-master/internal/models"
 )
+
+// stringPtr helper function for test setup
+func stringPtr(s string) *string {
+	return &s
+}
 
 // Mock implementations for testing
 type MockMachineRepository struct {
@@ -98,10 +105,15 @@ func createMachineService() (*MachineService, *MockMachineRepository, *MockProdu
 	mockProductRepo := new(MockProductRepository)
 	mockDeviceService := new(MockDeviceService)
 
+	// Create in-memory database for tests that need db access
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	_ = db.AutoMigrate(&models.Product{})
+
 	service := &MachineService{
 		machineRepo:   mockMachineRepo,
 		productRepo:   mockProductRepo,
 		deviceService: mockDeviceService,
+		db:            db,
 	}
 
 	return service, mockMachineRepo, mockProductRepo, mockDeviceService
@@ -139,11 +151,11 @@ func TestMachineService_GetMachinePaging(t *testing.T) {
 	machines := []*models.Machine{
 		{
 			ID:             "machine-1",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M001",
-			Name:           "Test Machine",
-			Area:           "Area A",
-			Address:        "Address A",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M001"),
+			Name:           stringPtr("Test Machine"),
+			Area:           stringPtr("Area A"),
+			Address:        stringPtr("Address A"),
 			BusinessStatus: enums.BusinessStatusOpen,
 		},
 	}
@@ -183,16 +195,15 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 	servicePhone := "123-456-7890"
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
-		MachineNo:      "M001",
-		Name:           "Test Machine",
-		Area:           "Area A",
-		Address:        "Address A",
+		MachineOwnerId: stringPtr("owner-123"),
+		MachineNo:      stringPtr("M001"),
+		Name:           stringPtr("Test Machine"),
+		Area:           stringPtr("Area A"),
+		Address:        stringPtr("Address A"),
 		BusinessStatus: enums.BusinessStatusOpen,
 		// DeviceId field removed from model
 		ServicePhone: &servicePhone,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		CreatedOn:    time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -205,7 +216,7 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 	assert.Equal(t, "M001", result.MachineNo)
 	assert.Equal(t, "Test Machine", result.Name)
 	assert.Equal(t, enums.BusinessStatusOpen.ToAPIString(), result.BusinessStatus)
-	assert.Equal(t, "device-123", result.DeviceID)
+	assert.Equal(t, "M001", result.DeviceID)
 	assert.Equal(t, "123-456-7890", result.ServicePhone)
 
 	mockRepo.AssertExpectations(t)
@@ -217,13 +228,12 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
-		MachineNo:      "M001",
-		Name:           "Test Machine",
+		MachineOwnerId: stringPtr("owner-123"),
+		MachineNo:      stringPtr("M001"),
+		Name:           stringPtr("Test Machine"),
 		BusinessStatus: enums.BusinessStatusOpen,
 		// DeviceId field removed from model
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedOn: time.Now(),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -241,14 +251,12 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 func TestMachineService_GetProductList(t *testing.T) {
 	service, _, mockProductRepo, _ := createMachineService()
 
-	category := "Drinks"
-	description := "Test product"
-	product := &models.Product{
-		ID:          "product-1",
-		Name:        "Coffee",
-		Category:    &category,
-		Description: &description,
+	// Create test product in database
+	testProduct := &models.Product{
+		ID:   "product-1",
+		Name: "Coffee",
 	}
+	service.db.Create(testProduct)
 
 	machineProducts := []*models.MachineProductPrice{
 		{
@@ -257,8 +265,6 @@ func TestMachineService_GetProductList(t *testing.T) {
 			ProductId:       "product-1",
 			Price:           5.0,
 			PriceWithoutCup: 4.5,
-			Stock:           100,
-			Product:         product,
 		},
 	}
 
@@ -277,9 +283,6 @@ func TestMachineService_GetProductList(t *testing.T) {
 	assert.Equal(t, "Coffee", productItem.Name)
 	assert.Equal(t, 5.0, productItem.Price)
 	assert.Equal(t, 4.5, productItem.PriceWithoutCup)
-	assert.Equal(t, 100, productItem.Stock)
-	assert.Equal(t, "Drinks", productItem.Category)
-	assert.Equal(t, "Test product", productItem.Description)
 
 	mockProductRepo.AssertExpectations(t)
 }
@@ -289,7 +292,7 @@ func TestMachineService_OpenOrCloseBusiness(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
@@ -310,7 +313,7 @@ func TestMachineService_OpenOrCloseBusiness_PermissionDenied(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 		BusinessStatus: enums.BusinessStatusOpen,
 	}
 
@@ -352,7 +355,7 @@ func TestMachineService_ValidateMachineOwnership(t *testing.T) {
 
 	machine := &models.Machine{
 		ID:             "machine-123",
-		MachineOwnerId: "owner-123",
+		MachineOwnerId: stringPtr("owner-123"),
 	}
 
 	mockRepo.On("GetByID", "machine-123").Return(machine, nil)
@@ -375,16 +378,16 @@ func TestMachineService_GetMachineList(t *testing.T) {
 	machines := []*models.Machine{
 		{
 			ID:             "machine-1",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M001",
-			Name:           "Test Machine 1",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M001"),
+			Name:           stringPtr("Test Machine 1"),
 			BusinessStatus: enums.BusinessStatusOpen,
 		},
 		{
 			ID:             "machine-2",
-			MachineOwnerId: "owner-123",
-			MachineNo:      "M002",
-			Name:           "Test Machine 2",
+			MachineOwnerId: stringPtr("owner-123"),
+			MachineNo:      stringPtr("M002"),
+			Name:           stringPtr("Test Machine 2"),
 			BusinessStatus: enums.BusinessStatusClose,
 		},
 	}
