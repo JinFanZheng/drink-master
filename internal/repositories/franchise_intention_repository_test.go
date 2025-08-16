@@ -125,15 +125,35 @@ func TestFranchiseIntentionRepository_GetPendingDirectly(t *testing.T) {
 	memberID1 := "member-pending-1"
 	_ = createTestFranchiseIntention(t, db, memberID1)
 
-	// 创建已处理的意向
+	// 创建已处理的意向 - 使用不同的ID避免冲突
 	memberID2 := "member-handled-2"
-	handledIntention := createTestFranchiseIntention(t, db, memberID2)
-	handledIntention.IsHandled = models.BitBool(1)
-	db.Save(handledIntention)
+	company := "已处理公司"
+	name := "李四"
+	mobile := "13900139000"
+	area := "上海市"
+	remark := "已处理备注"
+	now := time.Now()
 
-	// 查询待处理的意向
+	handledIntention := &models.FranchiseIntention{
+		ID:        "test-franchise-2", // 使用不同的ID
+		MemberId:  &memberID2,
+		Company:   &company,
+		Name:      &name,
+		Mobile:    &mobile,
+		Area:      &area,
+		Remark:    &remark,
+		IsHandled: models.BitBool(1), // 直接设置为已处理
+		Version:   1,
+		CreatedOn: now,
+		UpdatedOn: &now,
+	}
+
+	err := db.Create(handledIntention).Error
+	assert.NoError(t, err)
+
+	// 查询待处理的意向 - 使用正确的GORM字段名
 	var pendingIntentions []models.FranchiseIntention
-	err := db.Where("is_handled = ?", 0).Find(&pendingIntentions).Error
+	err = db.Where("IsHandled = ?", 0).Find(&pendingIntentions).Error
 	assert.NoError(t, err)
 	assert.Len(t, pendingIntentions, 1)
 	assert.True(t, pendingIntentions[0].IsPending())

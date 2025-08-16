@@ -143,5 +143,5 @@ func TestMaterialSiloModel(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, silo.ID, foundSilo.ID)
 	assert.Equal(t, BitBool(1), foundSilo.IsSale)
-	assert.True(t, foundSilo.CanSale()) // Should be false because no ProductId
+	assert.False(t, foundSilo.CanSale()) // Should be false because no ProductId
 }

@@ -58,10 +58,8 @@ func (r *MaterialSiloRepository) GetByID(id string) (*models.MaterialSilo, error
 // GetByMachineID 根据机器ID获取所有物料槽
 func (r *MaterialSiloRepository) GetByMachineID(machineID string) ([]*models.MaterialSilo, error) {
 	var silos []*models.MaterialSilo
-	err := r.db.Where("machine_id = ?", machineID).
-		Preload("Machine").
-		Preload("Product").
-		Order("silo_no ASC").
+	err := r.db.Where("MachineId = ?", machineID).
+		Order("No ASC").
 		Find(&silos).Error
 
 	if err != nil {
@@ -80,7 +78,7 @@ func (r *MaterialSiloRepository) GetPaging(
 
 	// 计算总数
 	err := r.db.Model(&models.MaterialSilo{}).
-		Where("machine_id = ?", machineID).
+		Where("MachineId = ?", machineID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count material silos: %w", err)
@@ -88,10 +86,8 @@ func (r *MaterialSiloRepository) GetPaging(
 
 	// 分页查询
 	offset := (page - 1) * pageSize
-	err = r.db.Where("machine_id = ?", machineID).
-		Preload("Machine").
-		Preload("Product").
-		Order("silo_no ASC").
+	err = r.db.Where("MachineId = ?", machineID).
+		Order("No ASC").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&silos).Error
@@ -125,7 +121,7 @@ func (r *MaterialSiloRepository) Update(silo *models.MaterialSilo) error {
 func (r *MaterialSiloRepository) UpdateStock(id string, stock int) error {
 	err := r.db.Model(&models.MaterialSilo{}).
 		Where("id = ?", id).
-		Update("stock", stock).Error
+		Update("Stock", stock).Error
 
 	if err != nil {
 		return fmt.Errorf("failed to update material silo stock: %w", err)
@@ -138,7 +134,7 @@ func (r *MaterialSiloRepository) UpdateStock(id string, stock int) error {
 func (r *MaterialSiloRepository) UpdateProduct(id string, productID string) error {
 	err := r.db.Model(&models.MaterialSilo{}).
 		Where("id = ?", id).
-		Update("product_id", productID).Error
+		Update("ProductId", productID).Error
 
 	if err != nil {
 		return fmt.Errorf("failed to update material silo product: %w", err)
@@ -149,9 +145,16 @@ func (r *MaterialSiloRepository) UpdateProduct(id string, productID string) erro
 
 // UpdateSaleStatus 更新销售状态
 func (r *MaterialSiloRepository) UpdateSaleStatus(id string, status enums.SaleStatus) error {
+	var isSale models.BitBool
+	if status == enums.SaleStatusOn {
+		isSale = models.BitBool(1)
+	} else {
+		isSale = models.BitBool(0)
+	}
+
 	err := r.db.Model(&models.MaterialSilo{}).
 		Where("id = ?", id).
-		Update("sale_status", status).Error
+		Update("IsSale", isSale).Error
 
 	if err != nil {
 		return fmt.Errorf("failed to update material silo sale status: %w", err)
@@ -172,9 +175,7 @@ func (r *MaterialSiloRepository) Delete(id string) error {
 // GetBySiloNo 根据机器ID和槽位号获取物料槽
 func (r *MaterialSiloRepository) GetBySiloNo(machineID string, siloNo int) (*models.MaterialSilo, error) {
 	var silo models.MaterialSilo
-	err := r.db.Where("machine_id = ? AND silo_no = ?", machineID, siloNo).
-		Preload("Machine").
-		Preload("Product").
+	err := r.db.Where("MachineId = ? AND No = ?", machineID, siloNo).
 		First(&silo).Error
 
 	if err != nil {
@@ -192,10 +193,8 @@ func (r *MaterialSiloRepository) GetByMachineAndProduct(
 	machineID string, productID string,
 ) ([]*models.MaterialSilo, error) {
 	var silos []*models.MaterialSilo
-	err := r.db.Where("machine_id = ? AND product_id = ?", machineID, productID).
-		Preload("Machine").
-		Preload("Product").
-		Order("silo_no ASC").
+	err := r.db.Where("MachineId = ? AND ProductId = ?", machineID, productID).
+		Order("No ASC").
 		Find(&silos).Error
 
 	if err != nil {

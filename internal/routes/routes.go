@@ -44,7 +44,7 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	{
 		// 公开接口
 		account.GET("/CheckUserInfo", accountHandler.CheckUserInfo)
-		account.POST("/WeChatLogin", accountHandler.WeChatLogin)
+		account.POST("/weChatLogin", accountHandler.WeChatLogin)
 
 		// 需要认证的接口
 		account.GET("/CheckLogin", middleware.JWTAuth(), accountHandler.CheckLogin)

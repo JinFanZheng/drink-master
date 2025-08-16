@@ -155,13 +155,19 @@ func (s *MemberService) CreateFranchiseIntention(
 		intendedLocation = *intention.Area
 	}
 
+	// Convert IsHandled status to proper status string
+	status := "Pending"
+	if intention.IsHandled.Bool() {
+		status = "Handled"
+	}
+
 	response := &contracts.CreateFranchiseIntentionResponse{
 		ID:               intention.ID,
 		MemberID:         memberId,
 		ContactName:      contactName,
 		ContactPhone:     contactPhone,
 		IntendedLocation: intendedLocation,
-		Status:           fmt.Sprintf("%t", intention.IsHandled.Bool()), // Convert BitBool to bool then string
+		Status:           status, // Use proper status string instead of bool conversion
 		CreatedAt:        intention.CreatedOn,
 		Success:          true,
 	}
@@ -190,11 +196,17 @@ func (s *MemberService) GetMemberInfo(memberID string) (*contracts.GetMemberInfo
 			intendedLocation = *intention.Area
 		}
 
+		// Convert IsHandled status to proper status string
+		intentionStatus := "Pending"
+		if intention.IsHandled.Bool() {
+			intentionStatus = "Handled"
+		}
+
 		summary := contracts.FranchiseIntentionSummary{
 			ID:               intention.ID,
 			ContactName:      contactName,
 			IntendedLocation: intendedLocation,
-			Status:           contracts.FranchiseIntentionStatus(fmt.Sprintf("%t", intention.IsHandled.Bool())),
+			Status:           contracts.FranchiseIntentionStatus(intentionStatus),
 			CreatedAt:        intention.CreatedOn,
 		}
 		intentionSummaries = append(intentionSummaries, summary)
@@ -259,8 +271,9 @@ func (s *MemberService) UpdateFranchiseIntentionStatus(intentionID string, statu
 		return fmt.Errorf("invalid status: %s", status)
 	}
 
-	// 更新状态
-	err := s.franchiseIntentionRepo.UpdateStatus(intentionID, status)
+	// 更新状态 - 将字符串状态转换为bool
+	isHandled := status != "Pending" // Pending表示未处理，其他状态都表示已处理
+	err := s.franchiseIntentionRepo.UpdateStatus(intentionID, isHandled)
 	if err != nil {
 		return fmt.Errorf("failed to update franchise intention status: %w", err)
 	}

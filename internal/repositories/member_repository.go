@@ -21,7 +21,7 @@ func NewMemberRepository(db *gorm.DB) *MemberRepository {
 // GetByID 根据ID获取会员信息
 func (r *MemberRepository) GetByID(id string) (*models.Member, error) {
 	var member models.Member
-	err := r.db.Where("id = ? AND deleted_at IS NULL", id).First(&member).Error
+	err := r.db.Where("id = ?", id).First(&member).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("member not found: %s", id)
@@ -34,7 +34,7 @@ func (r *MemberRepository) GetByID(id string) (*models.Member, error) {
 // GetByWeChatOpenID 根据微信OpenID获取会员信息
 func (r *MemberRepository) GetByWeChatOpenID(openID string) (*models.Member, error) {
 	var member models.Member
-	err := r.db.Where("we_chat_open_id = ? AND deleted_at IS NULL", openID).First(&member).Error
+	err := r.db.Where("WeChatOpenId = ?", openID).First(&member).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("member not found with openID: %s", openID)
@@ -76,7 +76,7 @@ func (r *MemberRepository) GetMemberWithFranchiseIntentions(
 	memberID string,
 ) (*models.Member, []models.FranchiseIntention, error) {
 	var member models.Member
-	err := r.db.Where("id = ? AND deleted_at IS NULL", memberID).First(&member).Error
+	err := r.db.Where("id = ?", memberID).First(&member).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil, fmt.Errorf("member not found: %s", memberID)
@@ -85,8 +85,8 @@ func (r *MemberRepository) GetMemberWithFranchiseIntentions(
 	}
 
 	var intentions []models.FranchiseIntention
-	err = r.db.Where("member_id = ? AND deleted_at IS NULL", memberID).
-		Order("created_at DESC").
+	err = r.db.Where("MemberId = ?", memberID).
+		Order("CreatedOn DESC").
 		Find(&intentions).Error
 	if err != nil {
 		return &member, nil, fmt.Errorf("failed to get franchise intentions: %w", err)

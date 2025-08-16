@@ -30,9 +30,7 @@ func (r *FranchiseIntentionRepository) Create(intention *models.FranchiseIntenti
 // GetByID 根据ID获取加盟意向
 func (r *FranchiseIntentionRepository) GetByID(id string) (*models.FranchiseIntention, error) {
 	var intention models.FranchiseIntention
-	err := r.db.Where("id = ? AND deleted_at IS NULL", id).
-		Preload("Member").
-		First(&intention).Error
+	err := r.db.Where("id = ?", id).First(&intention).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("franchise intention not found: %s", id)
@@ -45,8 +43,8 @@ func (r *FranchiseIntentionRepository) GetByID(id string) (*models.FranchiseInte
 // GetByMemberID 根据会员ID获取加盟意向列表
 func (r *FranchiseIntentionRepository) GetByMemberID(memberID string) ([]models.FranchiseIntention, error) {
 	var intentions []models.FranchiseIntention
-	err := r.db.Where("member_id = ? AND deleted_at IS NULL", memberID).
-		Order("created_at DESC").
+	err := r.db.Where("MemberId = ?", memberID).
+		Order("CreatedOn DESC").
 		Find(&intentions).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get franchise intentions for member %s: %w", memberID, err)
@@ -58,7 +56,7 @@ func (r *FranchiseIntentionRepository) GetByMemberID(memberID string) ([]models.
 func (r *FranchiseIntentionRepository) CheckExistingByMember(memberID string) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.FranchiseIntention{}).
-		Where("member_id = ? AND status = ? AND deleted_at IS NULL", memberID, "Pending").
+		Where("MemberId = ? AND IsHandled = ?", memberID, models.BitBool(0)).
 		Count(&count).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to check existing franchise intention: %w", err)
@@ -76,10 +74,17 @@ func (r *FranchiseIntentionRepository) Update(intention *models.FranchiseIntenti
 }
 
 // UpdateStatus 更新加盟意向状态
-func (r *FranchiseIntentionRepository) UpdateStatus(id string, status string) error {
+func (r *FranchiseIntentionRepository) UpdateStatus(id string, isHandled bool) error {
+	var bitBoolValue models.BitBool
+	if isHandled {
+		bitBoolValue = models.BitBool(1)
+	} else {
+		bitBoolValue = models.BitBool(0)
+	}
+
 	err := r.db.Model(&models.FranchiseIntention{}).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Update("status", status).Error
+		Where("id = ?", id).
+		Update("IsHandled", bitBoolValue).Error
 	if err != nil {
 		return fmt.Errorf("failed to update franchise intention status: %w", err)
 	}
@@ -97,14 +102,20 @@ func (r *FranchiseIntentionRepository) Delete(id string) error {
 
 // GetPaginated 分页获取加盟意向列表
 func (r *FranchiseIntentionRepository) GetPaginated(
-	offset, limit int, status string,
+	offset, limit int, isHandled *bool,
 ) ([]models.FranchiseIntention, int64, error) {
 	var intentions []models.FranchiseIntention
 	var total int64
 
-	query := r.db.Model(&models.FranchiseIntention{}).Where("deleted_at IS NULL")
-	if status != "" {
-		query = query.Where("status = ?", status)
+	query := r.db.Model(&models.FranchiseIntention{})
+	if isHandled != nil {
+		var bitBoolValue models.BitBool
+		if *isHandled {
+			bitBoolValue = models.BitBool(1)
+		} else {
+			bitBoolValue = models.BitBool(0)
+		}
+		query = query.Where("IsHandled = ?", bitBoolValue)
 	}
 
 	// 获取总数
@@ -114,8 +125,7 @@ func (r *FranchiseIntentionRepository) GetPaginated(
 	}
 
 	// 获取分页数据
-	err = query.Preload("Member").
-		Order("created_at DESC").
+	err = query.Order("CreatedOn DESC").
 		Offset(offset).
 		Limit(limit).
 		Find(&intentions).Error

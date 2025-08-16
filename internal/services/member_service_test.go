@@ -4,26 +4,16 @@ import (
 	"testing"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/repositories"
+	"github.com/ddteam/drink-master/internal/testutils"
 )
 
 func setupServiceTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	err = models.AutoMigrate(db)
-	if err != nil {
-		t.Fatalf("failed to migrate database: %v", err)
-	}
-
-	return db
+	return testutils.SetupTestDB(t)
 }
 
 func createServiceTestMember(t *testing.T, db *gorm.DB) *models.Member {
@@ -436,7 +426,7 @@ func TestMemberService_FindOrCreateByOpenID_NewMember(t *testing.T) {
 
 	// Verify member was actually created in database
 	var count int64
-	db.Model(&models.Member{}).Where("we_chat_open_id = ?", openID).Count(&count)
+	db.Model(&models.Member{}).Where("WeChatOpenId = ?", openID).Count(&count)
 	if count != 1 {
 		t.Errorf("expected 1 member in database, got %d", count)
 	}

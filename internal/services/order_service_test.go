@@ -292,7 +292,8 @@ func TestOrderService_GetByOrderNo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "order123", result.ID)
-	assert.Equal(t, "ORD20250813001", result.OrderNo)
+	assert.NotNil(t, result.OrderNo)
+	assert.Equal(t, "ORD20250813001", *result.OrderNo)
 
 	mockRepo.AssertExpectations(t)
 }

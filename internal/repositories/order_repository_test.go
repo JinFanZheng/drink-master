@@ -111,7 +111,7 @@ func (suite *OrderRepositoryTestSuite) TestGetByID() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), result)
 	assert.Equal(suite.T(), "test-order-2", result.ID)
-	assert.Equal(suite.T(), "ORD202508120002", result.OrderNo)
+	assert.Equal(suite.T(), "ORD202508120002", *result.OrderNo)
 }
 
 func (suite *OrderRepositoryTestSuite) TestGetByID_NotFound() {
@@ -224,11 +224,10 @@ func (suite *OrderRepositoryTestSuite) TestDelete() {
 	err := suite.repo.Delete("test-order-6")
 	assert.NoError(suite.T(), err)
 
-	// 验证软删除
-	var deletedOrder models.Order
-	err = suite.db.Unscoped().First(&deletedOrder, "id = ?", "test-order-6").Error
-	assert.NoError(suite.T(), err)
-	// Note: DeletedAt field removed from Order model
+	// 验证硬删除 - Order模型没有DeletedAt字段，所以是硬删除
+	var count int64
+	suite.db.Model(&models.Order{}).Where("id = ?", "test-order-6").Count(&count)
+	assert.Equal(suite.T(), int64(0), count)
 
 	// 验证正常查询找不到
 	_, err = suite.repo.GetByID("test-order-6")
@@ -258,7 +257,7 @@ func (suite *OrderRepositoryTestSuite) TestGetByOrderNo() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), result)
 	assert.Equal(suite.T(), "test-order-7", result.ID)
-	assert.Equal(suite.T(), "ORD202508120007", result.OrderNo)
+	assert.Equal(suite.T(), "ORD202508120007", *result.OrderNo)
 }
 
 func (suite *OrderRepositoryTestSuite) TestGetByOrderNo_NotFound() {

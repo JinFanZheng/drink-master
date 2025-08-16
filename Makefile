@@ -1,6 +1,6 @@
 # Drink Master - Go项目开发工具
 
-.PHONY: help dev build test lint clean db-migrate db-rollback db-reset db-seed health-check test-api pre-commit deploy-check
+.PHONY: help dev build test lint clean db-migrate db-rollback db-reset db-seed health-check test-api pre-commit deploy-check docker-build docker-build-prod docker-push docker-login docker-run docker-run-prod version version-patch version-minor version-major version-set release-patch release-minor release-major release-current
 
 # 默认目标
 help: ## 显示帮助信息
@@ -140,13 +140,131 @@ deps: ## 安装/更新依赖
 	go mod download
 
 # Docker相关
+# 版本管理
+VERSION := $(shell cat VERSION 2>/dev/null || echo "v1.0.0")
+REGISTRY := registry.cn-shenzhen.aliyuncs.com/lrmtc
+IMAGE_NAME := drink-master
+FULL_IMAGE := $(REGISTRY)/$(IMAGE_NAME)
+
 docker-build: ## 构建Docker镜像
 	@echo "🐳 构建Docker镜像..."
 	docker build -t drink-master:latest .
 
+docker-build-prod: ## 构建生产环境Docker镜像 (linux/amd64)
+	@echo "🐳 构建生产环境Docker镜像 (linux/amd64)..."
+	@echo "当前版本: $(VERSION)"
+	docker buildx build --platform linux/amd64 \
+		--load \
+		-t $(FULL_IMAGE):$(VERSION) \
+		-t $(FULL_IMAGE):latest \
+		.
+
+docker-push: docker-build-prod ## 构建并推送Docker镜像到阿里云
+	@echo "📤 推送Docker镜像到阿里云容器镜像服务..."
+	@echo "推送版本: $(VERSION)"
+	docker push $(FULL_IMAGE):$(VERSION)
+	docker push $(FULL_IMAGE):latest
+	@echo "✅ 镜像推送完成!"
+	@echo "镜像地址:"
+	@echo "  - $(FULL_IMAGE):$(VERSION)"
+	@echo "  - $(FULL_IMAGE):latest"
+
+docker-build-and-push: ## 直接构建并推送Docker镜像到阿里云 (推荐用于CI/CD)
+	@echo "🐳 构建并推送Docker镜像 (linux/amd64)..."
+	@echo "推送版本: $(VERSION)"
+	docker buildx build --platform linux/amd64 \
+		--push \
+		-t $(FULL_IMAGE):$(VERSION) \
+		-t $(FULL_IMAGE):latest \
+		.
+	@echo "✅ 镜像构建和推送完成!"
+	@echo "镜像地址:"
+	@echo "  - $(FULL_IMAGE):$(VERSION)"
+	@echo "  - $(FULL_IMAGE):latest"
+
+docker-login: ## 登录阿里云容器镜像服务
+	@echo "🔐 登录阿里云容器镜像服务..."
+	@echo "请使用阿里云控制台的访问凭证进行登录"
+	@echo "用户名: 阿里云账号全名 (如: your-name@example.com)"
+	@echo "密码: 容器镜像服务的访问密码 (在阿里云容器镜像服务控制台设置)"
+	docker login registry.cn-shenzhen.aliyuncs.com
+
 docker-run: ## 运行Docker容器
 	@echo "🚀 运行Docker容器..."
 	docker run -p 8080:8080 --env-file .env drink-master:latest
+
+docker-run-prod: ## 运行生产环境Docker容器
+	@echo "🚀 运行生产环境Docker容器..."
+	docker run -p 8080:8080 --env-file .env $(FULL_IMAGE):$(VERSION)
+
+# 版本管理
+version: ## 显示当前版本
+	@echo "当前版本: $(VERSION)"
+
+version-patch: ## 升级补丁版本 (x.y.z -> x.y.z+1)
+	@echo "升级补丁版本..."
+	@current=$$(cat VERSION | sed 's/v//'); \
+	major=$$(echo $$current | cut -d. -f1); \
+	minor=$$(echo $$current | cut -d. -f2); \
+	patch=$$(echo $$current | cut -d. -f3); \
+	new_patch=$$((patch + 1)); \
+	new_version="v$$major.$$minor.$$new_patch"; \
+	echo $$new_version > VERSION; \
+	echo "版本已升级: $$current -> $$new_version"
+
+version-minor: ## 升级次版本 (x.y.z -> x.y+1.0)
+	@echo "升级次版本..."
+	@current=$$(cat VERSION | sed 's/v//'); \
+	major=$$(echo $$current | cut -d. -f1); \
+	minor=$$(echo $$current | cut -d. -f2); \
+	new_minor=$$((minor + 1)); \
+	new_version="v$$major.$$new_minor.0"; \
+	echo $$new_version > VERSION; \
+	echo "版本已升级: $$current -> $$new_version"
+
+version-major: ## 升级主版本 (x.y.z -> x+1.0.0)
+	@echo "升级主版本..."
+	@current=$$(cat VERSION | sed 's/v//'); \
+	major=$$(echo $$current | cut -d. -f1); \
+	new_major=$$((major + 1)); \
+	new_version="v$$new_major.0.0"; \
+	echo $$new_version > VERSION; \
+	echo "版本已升级: $$current -> $$new_version"
+
+version-set: ## 设置指定版本 (使用 VERSION=vx.y.z make version-set)
+	@if [ -z "$(NEW_VERSION)" ]; then \
+		echo "❌ 请指定版本号，例如: make version-set NEW_VERSION=v1.2.3"; \
+		exit 1; \
+	fi
+	@echo "设置版本为: $(NEW_VERSION)"
+	@echo "$(NEW_VERSION)" > VERSION
+	@echo "✅ 版本已设置为: $(NEW_VERSION)"
+
+# 发布流程
+release-patch: pre-commit version-patch docker-push ## 补丁发布 (构建+测试+升级补丁版本+推送)
+	@echo "🚀 补丁版本发布完成!"
+
+release-minor: pre-commit version-minor docker-push ## 次版本发布 (构建+测试+升级次版本+推送)
+	@echo "🚀 次版本发布完成!"
+
+release-major: pre-commit version-major docker-push ## 主版本发布 (构建+测试+升级主版本+推送)
+	@echo "🚀 主版本发布完成!"
+
+release-current: pre-commit docker-push ## 发布当前版本 (构建+测试+推送当前版本)
+	@echo "🚀 当前版本发布完成!"
+
+# 更高效的发布流程 (直接构建推送)
+release-patch-fast: pre-commit version-patch docker-build-and-push ## 快速补丁发布 (推荐)
+	@echo "🚀 补丁版本快速发布完成!"
+
+release-minor-fast: pre-commit version-minor docker-build-and-push ## 快速次版本发布 (推荐)
+	@echo "🚀 次版本快速发布完成!"
+
+release-major-fast: pre-commit version-major docker-build-and-push ## 快速主版本发布 (推荐)
+	@echo "🚀 主版本快速发布完成!"
+
+release-current-fast: pre-commit docker-build-and-push ## 快速发布当前版本 (推荐)
+	@echo "🚀 当前版本快速发布完成!"
 
 # 性能测试
 benchmark: ## 运行性能基准测试

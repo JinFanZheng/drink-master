@@ -1,8 +1,6 @@
 package repositories
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -42,8 +40,7 @@ func (r *orderRepository) Create(order *models.Order) error {
 // GetByID 根据ID获取订单
 func (r *orderRepository) GetByID(id string) (*models.Order, error) {
 	var order models.Order
-	err := r.db.Preload("Member").Preload("Machine").Preload("Product").
-		Where("id = ? AND deleted_at IS NULL", id).First(&order).Error
+	err := r.db.Where("id = ?", id).First(&order).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +54,7 @@ func (r *orderRepository) GetByMemberPaging(memberID string, pageIndex, pageSize
 
 	// 计算总数
 	err := r.db.Model(&models.Order{}).
-		Where("member_id = ? AND deleted_at IS NULL", memberID).
+		Where("MemberId = ?", memberID).
 		Count(&total).Error
 	if err != nil {
 		return nil, 0, err
@@ -67,9 +64,8 @@ func (r *orderRepository) GetByMemberPaging(memberID string, pageIndex, pageSize
 	offset := (pageIndex - 1) * pageSize
 
 	// 查询订单列表
-	err = r.db.Preload("Product").
-		Where("member_id = ? AND deleted_at IS NULL", memberID).
-		Order("created_at DESC").
+	err = r.db.Where("MemberId = ?", memberID).
+		Order("CreatedOn DESC").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&orders).Error
@@ -84,16 +80,13 @@ func (r *orderRepository) Update(order *models.Order) error {
 
 // Delete 软删除订单
 func (r *orderRepository) Delete(id string) error {
-	return r.db.Model(&models.Order{}).
-		Where("id = ?", id).
-		Update("deleted_at", time.Now()).Error
+	return r.db.Where("id = ?", id).Delete(&models.Order{}).Error
 }
 
 // GetByOrderNo 根据订单号获取订单
 func (r *orderRepository) GetByOrderNo(orderNo string) (*models.Order, error) {
 	var order models.Order
-	err := r.db.Preload("Member").Preload("Machine").Preload("Product").
-		Where("order_no = ? AND deleted_at IS NULL", orderNo).First(&order).Error
+	err := r.db.Where("OrderNo = ?", orderNo).First(&order).Error
 	if err != nil {
 		return nil, err
 	}

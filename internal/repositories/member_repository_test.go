@@ -74,7 +74,7 @@ func TestMemberRepository_GetByID(t *testing.T) {
 		t.Errorf("expected member ID '%s', got '%s'", testMember.ID, member.ID)
 	}
 
-	if member.Nickname != testMember.Nickname {
+	if *member.Nickname != *testMember.Nickname {
 		t.Errorf("expected nickname '%s', got '%s'", *testMember.Nickname, *member.Nickname)
 	}
 
@@ -98,7 +98,7 @@ func TestMemberRepository_GetByWeChatOpenID(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if member.WeChatOpenId != testMember.WeChatOpenId {
+	if *member.WeChatOpenId != *testMember.WeChatOpenId {
 		t.Errorf("expected openID '%s', got '%s'", *testMember.WeChatOpenId, *member.WeChatOpenId)
 	}
 
@@ -161,7 +161,7 @@ func TestMemberRepository_Create(t *testing.T) {
 		t.Fatalf("expected no error when getting created member, got %v", err)
 	}
 
-	if createdMember.Nickname != member.Nickname {
+	if *createdMember.Nickname != *member.Nickname {
 		t.Errorf("expected nickname '%s', got '%s'", *member.Nickname, *createdMember.Nickname)
 	}
 }
