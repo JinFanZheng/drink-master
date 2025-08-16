@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
 	"github.com/ddteam/drink-master/internal/contracts"
 	"github.com/ddteam/drink-master/internal/enums"
@@ -103,10 +105,15 @@ func createMachineService() (*MachineService, *MockMachineRepository, *MockProdu
 	mockProductRepo := new(MockProductRepository)
 	mockDeviceService := new(MockDeviceService)
 
+	// Create in-memory database for tests that need db access
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	_ = db.AutoMigrate(&models.Product{})
+
 	service := &MachineService{
 		machineRepo:   mockMachineRepo,
 		productRepo:   mockProductRepo,
 		deviceService: mockDeviceService,
+		db:            db,
 	}
 
 	return service, mockMachineRepo, mockProductRepo, mockDeviceService
@@ -209,7 +216,7 @@ func TestMachineService_GetMachineByID(t *testing.T) {
 	assert.Equal(t, "M001", result.MachineNo)
 	assert.Equal(t, "Test Machine", result.Name)
 	assert.Equal(t, enums.BusinessStatusOpen.ToAPIString(), result.BusinessStatus)
-	assert.Equal(t, "device-123", result.DeviceID)
+	assert.Equal(t, "M001", result.DeviceID)
 	assert.Equal(t, "123-456-7890", result.ServicePhone)
 
 	mockRepo.AssertExpectations(t)
@@ -243,6 +250,13 @@ func TestMachineService_GetMachineByID_DeviceOffline(t *testing.T) {
 
 func TestMachineService_GetProductList(t *testing.T) {
 	service, _, mockProductRepo, _ := createMachineService()
+
+	// Create test product in database
+	testProduct := &models.Product{
+		ID:   "product-1",
+		Name: "Coffee",
+	}
+	service.db.Create(testProduct)
 
 	machineProducts := []*models.MachineProductPrice{
 		{
