@@ -5,6 +5,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/ddteam/drink-master/internal/config"
 	"github.com/ddteam/drink-master/internal/handlers"
 	"github.com/ddteam/drink-master/internal/middleware"
@@ -20,6 +23,11 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	// 中间件设置
 	router.Use(middleware.CORSMiddleware())
 	router.Use(middleware.RequestLogger())
+
+	// Swagger API文档 (开发环境)
+	if gin.Mode() == gin.DebugMode {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	// 健康检查 (无需认证)
 	healthHandler := handlers.NewHealthHandler(db)

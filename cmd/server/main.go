@@ -1,3 +1,21 @@
+// @title Drink Master API
+// @version 1.0
+// @description 智能售货机管理系统API文档
+// @description 提供会员管理、设备管理、订单管理、支付等功能的RESTful API
+//
+// @contact.name API Support
+// @contact.email support@drinkmaster.com
+//
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+//
+// @host localhost:8080
+// @BasePath /api
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 package main
 
 import (
@@ -7,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	_ "github.com/ddteam/drink-master/docs/swagger" // swagger docs
 	"github.com/ddteam/drink-master/internal/config"
 	"github.com/ddteam/drink-master/internal/models"
 	"github.com/ddteam/drink-master/internal/routes"

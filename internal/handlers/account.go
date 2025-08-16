@@ -40,7 +40,16 @@ func NewAccountHandler(db *gorm.DB, wechatClient *wechat.Client) *AccountHandler
 }
 
 // CheckUserInfo 检查用户信息
-// GET /api/Account/CheckUserInfo?code=wx_code&appId=wx_app_id
+// @Summary 检查用户信息
+// @Description 通过微信code检查用户信息
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param code query string true "微信授权码"
+// @Param appId query string true "微信AppID"
+// @Success 200 {object} contracts.CheckUserInfoResponse
+// @Failure 400 {object} contracts.APIResponse
+// @Router /Account/CheckUserInfo [get]
 func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
 	var req contracts.CheckUserInfoRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -98,7 +107,15 @@ func (h *AccountHandler) CheckUserInfo(c *gin.Context) {
 }
 
 // WeChatLogin 微信登录
-// POST /api/Account/WeChatLogin
+// @Summary 微信登录
+// @Description 通过微信授权码进行用户登录
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param request body contracts.WeChatLoginRequest true "登录请求"
+// @Success 200 {object} contracts.WeChatLoginResponse
+// @Failure 400 {object} contracts.APIResponse
+// @Router /Account/WeChatLogin [post]
 func (h *AccountHandler) WeChatLogin(c *gin.Context) {
 	var req contracts.WeChatLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
