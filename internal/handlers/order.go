@@ -26,7 +26,17 @@ func NewOrderHandler(db *gorm.DB, orderService services.OrderService) *OrderHand
 }
 
 // GetPaging 分页获取订单列表
-// POST /api/Order/GetPaging
+// @Summary 分页获取用户订单列表
+// @Description 获取当前登录用户的订单列表，支持分页和筛选
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param request body contracts.GetMemberOrderPagingRequest true "分页请求"
+// @Success 200 {object} contracts.APIResponse{data=[]contracts.GetMemberOrderPagingResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Order/GetPaging [post]
 func (h *OrderHandler) GetPaging(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -65,7 +75,18 @@ func (h *OrderHandler) GetPaging(c *gin.Context) {
 }
 
 // Get 获取订单详情
-// GET /api/Order/Get?id=xxx
+// @Summary 获取订单详细信息
+// @Description 根据订单ID获取订单的详细信息
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param id query string true "订单ID"
+// @Success 200 {object} contracts.APIResponse{data=contracts.GetOrderByIdResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Order/Get [get]
 func (h *OrderHandler) Get(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -96,7 +117,17 @@ func (h *OrderHandler) Get(c *gin.Context) {
 }
 
 // Create 创建订单
-// POST /api/Order/Create
+// @Summary 创建新订单
+// @Description 用户创建一个新的购买订单
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param request body contracts.CreateOrderRequest true "创建订单请求"
+// @Success 201 {object} contracts.APIResponse{data=contracts.CreateOrderResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Order/Create [post]
 func (h *OrderHandler) Create(c *gin.Context) {
 	memberID, exists := h.GetMemberID(c)
 	if !exists {
@@ -140,7 +171,18 @@ func (h *OrderHandler) Create(c *gin.Context) {
 }
 
 // Refund 申请退款
-// POST /api/Order/Refund
+// @Summary 订单退款
+// @Description 机主权限用户对订单进行退款操作
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param request body contracts.RefundOrderRequest true "退款请求"
+// @Success 200 {object} contracts.APIResponse{data=contracts.RefundOrderResponse}
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Failure 404 {object} contracts.APIResponse
+// @Security BearerAuth
+// @Router /Order/Refund [post]
 func (h *OrderHandler) Refund(c *gin.Context) {
 	// 检查是否为机主
 	isMachineOwner := h.IsMachineOwner(c)

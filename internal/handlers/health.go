@@ -23,6 +23,13 @@ func NewHealthHandler(db *gorm.DB) *HealthHandler {
 }
 
 // Health 基础健康检查
+// @Summary 系统健康检查
+// @Description 获取系统基础健康状态
+// @Tags Health
+// @Accept json
+// @Produce json
+// @Success 200 {object} contracts.HealthResponse
+// @Router /health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	response := contracts.HealthResponse{
 		Status:    "ok",
@@ -40,6 +47,14 @@ func (h *HealthHandler) Health(c *gin.Context) {
 }
 
 // DatabaseHealth 数据库健康检查
+// @Summary 数据库健康检查
+// @Description 检查数据库连接状态和响应时间
+// @Tags Health
+// @Accept json
+// @Produce json
+// @Success 200 {object} contracts.HealthResponse
+// @Failure 503 {object} contracts.APIResponse
+// @Router /health/db [get]
 func (h *HealthHandler) DatabaseHealth(c *gin.Context) {
 	start := time.Now()
 
