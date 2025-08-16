@@ -88,7 +88,7 @@ func TestProductHandler_GetSelectList(t *testing.T) {
 	// 创建请求
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	req, _ := http.NewRequest("GET", "/api/products/select", nil)
+	req, _ := http.NewRequest("GET", "/api/Product/GetSelectList", nil)
 	c.Request = req
 
 	// 执行测试
@@ -132,7 +132,7 @@ func TestProductHandler_GetSelectList_EmptyResult(t *testing.T) {
 	// 创建请求
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	req, _ := http.NewRequest("GET", "/api/products/select", nil)
+	req, _ := http.NewRequest("GET", "/api/Product/GetSelectList", nil)
 	c.Request = req
 
 	// 执行测试
