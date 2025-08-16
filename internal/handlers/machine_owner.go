@@ -26,7 +26,18 @@ func NewMachineOwnerHandler(db *gorm.DB) *MachineOwnerHandler {
 }
 
 // GetSales 获取销售情况
-// GET /api/machine-owners/sales?dateTime=2025-08-11
+// @Summary 获取机主销售情况
+// @Description 获取指定日期的机主销售数据，默认为当天
+// @Tags MachineOwner
+// @Accept json
+// @Produce json
+// @Param dateTime query string false "查询日期 (YYYY-MM-DD格式)"
+// @Success 200 {object} contracts.MachineOwnerSalesResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Failure 500 {object} contracts.APIResponse
+// @Router /MachineOwner/GetSales [get]
+// @Security Bearer
 // 对应原方法: Task<List<ColumnModel>> GetSalesAsync([FromQuery] DateTime? dateTime)
 func (h *MachineOwnerHandler) GetSales(c *gin.Context) {
 	// 验证是否为机主
@@ -79,7 +90,20 @@ func (h *MachineOwnerHandler) GetSales(c *gin.Context) {
 }
 
 // GetSalesStats 获取销售统计 (扩展功能，可选实现)
-// GET /api/machine-owners/sales/stats?startDate=2025-08-01&endDate=2025-08-11
+// @Summary 获取机主销售统计
+// @Description 获取指定日期范围内的机主销售统计数据
+// @Tags MachineOwner
+// @Accept json
+// @Produce json
+// @Param startDate query string false "开始日期 (YYYY-MM-DD格式)，默认7天前"
+// @Param endDate query string false "结束日期 (YYYY-MM-DD格式)，默认今天"
+// @Success 200 {object} contracts.APIResponse
+// @Failure 400 {object} contracts.APIResponse
+// @Failure 401 {object} contracts.APIResponse
+// @Failure 403 {object} contracts.APIResponse
+// @Failure 500 {object} contracts.APIResponse
+// @Router /MachineOwner/GetSalesStats [get]
+// @Security Bearer
 func (h *MachineOwnerHandler) GetSalesStats(c *gin.Context) {
 	// 验证是否为机主
 	if !h.IsMachineOwner(c) {

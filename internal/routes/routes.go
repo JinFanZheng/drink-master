@@ -104,10 +104,10 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 
 	// 基于ProductController的路由
 	productHandler := handlers.NewProductHandler(db)
-	product := router.Group("/api/products")
+	product := router.Group("/api/Product")
 	{
 		// 公开接口
-		product.GET("/select", productHandler.GetSelectList)
+		product.GET("/GetSelectList", productHandler.GetSelectList)
 	}
 
 	// 基于MaterialSiloController的路由 (物料槽管理)
@@ -123,11 +123,11 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 
 	// 基于MachineOwnerController的路由 (机主管理功能)
 	machineOwnerHandler := handlers.NewMachineOwnerHandler(db)
-	machineOwner := router.Group("/api/machine-owners")
+	machineOwner := router.Group("/api/MachineOwner")
 	machineOwner.Use(middleware.JWTAuth()) // 所有机主接口都需要认证
 	{
-		machineOwner.GET("/sales", machineOwnerHandler.GetSales)
-		machineOwner.GET("/sales/stats", machineOwnerHandler.GetSalesStats)
+		machineOwner.GET("/GetSales", machineOwnerHandler.GetSales)
+		machineOwner.GET("/GetSalesStats", machineOwnerHandler.GetSalesStats)
 	}
 
 	// 基于CallbackController的路由 (无需认证)

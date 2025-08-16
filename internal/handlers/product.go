@@ -27,7 +27,7 @@ func NewProductHandler(db *gorm.DB) *ProductHandler {
 // @Produce json
 // @Success 200 {object} contracts.APIResponse{data=[]contracts.SelectViewModel}
 // @Failure 500 {object} contracts.APIResponse
-// @Router /products/select [get]
+// @Router /Product/GetSelectList [get]
 func (h *ProductHandler) GetSelectList(c *gin.Context) {
 	// Step 1: Get all products directly from products table using correct column mapping
 	var products []models.Product
